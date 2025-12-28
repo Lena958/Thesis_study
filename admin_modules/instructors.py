@@ -1,9 +1,15 @@
+"""
+Instructor management module for admin routes.
+Handles login, listing, adding, editing, and deleting instructors.
+"""
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 import mysql.connector
 
 instructors_bp = Blueprint('instructors', __name__, url_prefix='/admin/instructors')
 
+# Database configuration
 db_config = {
     'host': 'localhost',
     'user': 'root',
@@ -11,15 +17,26 @@ db_config = {
     'database': 'iload'
 }
 
+# Constants
+NO_INSTRUCTOR_INFO = {"instructor_name": None, "instructor_image": None}
+LIST_INSTRUCTORS_ENDPOINT = 'instructors.list_instructors'
+LOGIN_ENDPOINT = 'instructors.login'
+
+
 def get_db_connection():
+    """Return a new database connection."""
     return mysql.connector.connect(**db_config)
 
-def is_admin():
+
+def is_admin_user():
+    """Check if the current session user is an admin."""
     return session.get('role') == 'admin'
+
 
 # Login route
 @instructors_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handle instructor login."""
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
@@ -34,34 +51,41 @@ def login():
             session['user_id'] = user['instructor_id']
             session['role'] = user['role']
             flash("Logged in successfully!", "success")
-            return redirect(url_for('instructors.list_instructors'))
+            return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
 
         flash("Invalid username or password", "danger")
 
     return render_template('login.html')
 
+
 # Context processor for logged-in instructor's info
 @instructors_bp.context_processor
 def inject_instructor_name():
+    """Inject instructor info into templates."""
     if 'user_id' not in session:
-        return dict(instructor_name=None, instructor_image=None)
+        return NO_INSTRUCTOR_INFO
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT name, image FROM instructors WHERE instructor_id = %s", (session['user_id'],))
+    cursor.execute(
+        "SELECT name, image FROM instructors WHERE instructor_id = %s",
+        (session['user_id'],)
+    )
     instructor = cursor.fetchone()
     conn.close()
 
-    return dict(
-        instructor_name=instructor['name'] if instructor else None,
-        instructor_image=instructor['image'] if instructor and instructor['image'] else None
-    )
+    return {
+        "instructor_name": instructor['name'] if instructor else None,
+        "instructor_image": instructor['image'] if instructor and instructor['image'] else None
+    }
+
 
 # List all instructors
 @instructors_bp.route('/')
 def list_instructors():
-    if not is_admin():
-        return redirect(url_for('instructors.login'))
+    """Display all instructors."""
+    if not is_admin_user():
+        return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -70,20 +94,26 @@ def list_instructors():
     conn.close()
     return render_template("admin/instructors.html", instructors=instructors)
 
+
 # Add instructor
 @instructors_bp.route('/add', methods=['GET', 'POST'])
 def add_instructor():
-    if not is_admin():
-        return redirect(url_for('instructors.login'))
+    """Add a new instructor."""
+    if not is_admin_user():
+        return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Fetch distinct programs and statuses from DB
-    cursor.execute("SELECT DISTINCT program FROM instructors WHERE program IS NOT NULL AND program != ''")
+    # Fetch distinct programs and statuses
+    cursor.execute(
+        "SELECT DISTINCT program FROM instructors WHERE program IS NOT NULL AND program != ''"
+    )
     programs = [row['program'] for row in cursor.fetchall()]
 
-    cursor.execute("SELECT DISTINCT status FROM instructors WHERE status IS NOT NULL AND status != ''")
+    cursor.execute(
+        "SELECT DISTINCT status FROM instructors WHERE status IS NOT NULL AND status != ''"
+    )
     statuses = [row['status'] for row in cursor.fetchall()]
 
     conn.close()
@@ -113,7 +143,7 @@ def add_instructor():
         conn.close()
 
         flash("Instructor added successfully", "success")
-        return redirect(url_for('instructors.list_instructors'))
+        return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
 
     return render_template(
         "admin/add_instructor.html",
@@ -121,20 +151,25 @@ def add_instructor():
         statuses=statuses
     )
 
+
 # Edit instructor
 @instructors_bp.route('/edit/<int:instructor_id>', methods=['GET', 'POST'])
 def edit_instructor(instructor_id):
-    if not is_admin():
-        return redirect(url_for('instructors.login'))
+    """Edit an existing instructor."""
+    if not is_admin_user():
+        return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Fetch distinct programs and statuses from DB
-    cursor.execute("SELECT DISTINCT program FROM instructors WHERE program IS NOT NULL AND program != ''")
+    cursor.execute(
+        "SELECT DISTINCT program FROM instructors WHERE program IS NOT NULL AND program != ''"
+    )
     programs = [row['program'] for row in cursor.fetchall()]
 
-    cursor.execute("SELECT DISTINCT status FROM instructors WHERE status IS NOT NULL AND status != ''")
+    cursor.execute(
+        "SELECT DISTINCT status FROM instructors WHERE status IS NOT NULL AND status != ''"
+    )
     statuses = [row['status'] for row in cursor.fetchall()]
 
     if request.method == 'POST':
@@ -146,7 +181,7 @@ def edit_instructor(instructor_id):
 
         cursor.execute(
             """
-            UPDATE instructors 
+            UPDATE instructors
             SET name=%s, max_load_units=%s, department=%s, program=%s, status=%s
             WHERE instructor_id=%s
             """,
@@ -155,7 +190,7 @@ def edit_instructor(instructor_id):
         conn.commit()
         conn.close()
         flash("Instructor updated successfully", "success")
-        return redirect(url_for('instructors.list_instructors'))
+        return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
 
     cursor.execute("SELECT * FROM instructors WHERE instructor_id = %s", (instructor_id,))
     instructor = cursor.fetchone()
@@ -168,11 +203,13 @@ def edit_instructor(instructor_id):
         statuses=statuses
     )
 
+
 # Delete instructor
 @instructors_bp.route('/delete/<int:instructor_id>', methods=['POST'])
 def delete_instructor(instructor_id):
-    if not is_admin():
-        return redirect(url_for('instructors.login'))
+    """Delete an instructor."""
+    if not is_admin_user():
+        return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -180,4 +217,4 @@ def delete_instructor(instructor_id):
     conn.commit()
     conn.close()
     flash("Instructor deleted successfully", "success")
-    return redirect(url_for('instructors.list_instructors'))
+    return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))

@@ -1,13 +1,25 @@
-from flask import Blueprint, render_template, request, session, redirect, url_for
+"""
+Module for managing schedules and instructor-related views in iLoad admin.
+"""
+
+# ------------------------
+# Standard library imports
+# ------------------------
 from functools import wraps
-import mysql.connector
 from contextlib import contextmanager
 from datetime import datetime, timedelta, time
 
 # ------------------------
-# DB / blueprint
+# Third-party imports
 # ------------------------
-db_config = {
+from flask import Blueprint, render_template, request, session, redirect, url_for
+import mysql.connector
+from mysql.connector.cursor import MySQLCursorDict
+
+# ------------------------
+# DB / Blueprint
+# ------------------------
+DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
     'password': '',
@@ -15,15 +27,18 @@ db_config = {
 }
 
 def get_db_connection():
-    return mysql.connector.connect(**db_config)
+    """Return a new MySQL database connection using DB_CONFIG."""
+    return mysql.connector.connect(**DB_CONFIG)
 
 def is_admin():
+    """Return True if current session belongs to admin."""
     return session.get('role') == 'admin'
 
 @contextmanager
 def db_cursor(dictionary=False):
-    conn = mysql.connector.connect(**db_config)
-    cursor = conn.cursor(dictionary=dictionary)
+    """Context manager to yield a database cursor and commit/close connection."""
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_class=MySQLCursorDict) if dictionary else conn.cursor()
     try:
         yield cursor
         conn.commit()
@@ -31,53 +46,64 @@ def db_cursor(dictionary=False):
         cursor.close()
         conn.close()
 
+# ------------------------
+# Blueprint
+# ------------------------
 load_bp = Blueprint('load', __name__, url_prefix='/view')
 
+# ------------------------
+# Context processors
+# ------------------------
 @load_bp.context_processor
 def inject_instructor_name():
+    """Inject instructor's name and image into templates for sidebar."""
     if 'user_id' not in session:
-        return dict(instructor_name=None, instructor_image=None)
-    
+        return {"instructor_name": None, "instructor_image": None}
+
     with db_cursor(dictionary=True) as cursor:
         cursor.execute(
-            "SELECT name, image FROM instructors WHERE instructor_id = %s", 
+            "SELECT name, image FROM instructors WHERE instructor_id = %s",
             (session['user_id'],)
         )
         instructor = cursor.fetchone()
 
-    return dict(
-        instructor_name=instructor['name'] if instructor else None,
-        instructor_image=instructor['image'] if instructor and instructor['image'] else None
-    )
-
+    return {
+        "instructor_name": instructor['name'] if instructor else None,
+        "instructor_image": instructor['image'] if instructor and instructor['image'] else None
+    }
 
 # ------------------------
-# helpers
+# Helpers
 # ------------------------
 def admin_required(f):
+    """Decorator to restrict route access to admin only."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if session.get('role') != 'admin':
+        if not is_admin():
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
 
 def format_time_12hr(time_obj):
+    """Convert a time or timedelta object to 12-hour format string."""
     if not time_obj:
         return ""
     if isinstance(time_obj, str):
-        try:
-            time_obj = datetime.strptime(time_obj, "%H:%M:%S").time()
-        except:
-            time_obj = datetime.strptime(time_obj, "%H:%M").time()
+        for fmt in ("%H:%M:%S", "%H:%M"):
+            try:
+                time_obj = datetime.strptime(time_obj, fmt).time()
+                break
+            except ValueError:
+                continue
     elif isinstance(time_obj, timedelta):
         total_seconds = int(time_obj.total_seconds())
         hours = total_seconds // 3600
         minutes = (total_seconds % 3600) // 60
-        time_obj = datetime.strptime(f"{hours}:{minutes:02d}", "%H:%M").time()
+        time_obj = time(hour=hours, minute=minutes)
     return time_obj.strftime("%I:%M %p")
 
 def normalize_day(d):
+    """Normalize day abbreviations or names to full day name."""
     if not d:
         return None
     s = str(d).strip().lower()
@@ -98,22 +124,53 @@ def prettify_search_title(raw_title: str) -> str:
         return ""
     return " ".join(word.capitalize() for word in raw_title.strip().split())
 
-# ------------------------
-# sidebar context (instructor name)
-# ------------------------
-@load_bp.context_processor
-def inject_instructor_name():
-    if 'user_id' not in session:
-        return dict(instructor_name=None)
-    with db_cursor(dictionary=True) as cursor:
-        cursor.execute("SELECT name FROM instructors WHERE instructor_id = %s", (session['user_id'],))
-        r = cursor.fetchone()
-    return dict(instructor_name=(r['name'] if r else None))
+def convert_timedelta_to_time(td):
+    """Convert timedelta to time object."""
+    if isinstance(td, timedelta):
+        total_seconds = int(td.total_seconds())
+        return time(total_seconds // 3600, (total_seconds % 3600) // 60)
+    return td
+
+def build_time_slots(start=7, end=20):
+    """Generate half-hour time slots from start hour to end hour."""
+    slots = []
+    for h in range(start, end):
+        slots.append(time(h, 0))
+        slots.append(time(h, 30))
+    return slots
+
+def initialize_grid(days, slots_len):
+    """Create an empty schedule grid for given days and number of time slots."""
+    return {day: [None] * slots_len for day in days}
+
+def find_index(time_slots, t):
+    """Find index of the first slot >= t."""
+    try:
+        return next(i for i, slot in enumerate(time_slots) if slot >= t)
+    except StopIteration:
+        return len(time_slots)
+
+def insert_schedule_into_grid(grid, sched, days, time_slots):
+    """Insert a schedule entry into the half-hour grid."""
+    start = sched['start_time']
+    end = sched['end_time']
+    day = sched['day_of_week']
+    if not start or not end or day not in days:
+        return
+    start_idx = find_index(time_slots, start)
+    end_idx = find_index(time_slots, end)
+    duration = end_idx - start_idx
+    if duration <= 0:
+        return
+    grid[day][start_idx] = {**sched, "rowspan": duration}
+    for i in range(start_idx + 1, end_idx):
+        grid[day][i] = "skip"
 
 # ------------------------
-# fetch schedules with joined search
+# Fetch schedules
 # ------------------------
 def fetch_all_schedules(search_query=None):
+    """Fetch all approved schedules, optionally filtered by search query."""
     sql = """
         SELECT sc.schedule_id, sc.day_of_week, sc.start_time, sc.end_time,
                sb.subject_id, sb.code AS subject_code, sb.name AS subject_name, IFNULL(sb.units,0) AS units,
@@ -135,9 +192,7 @@ def fetch_all_schedules(search_query=None):
           AND rm.room_type IS NOT NULL
     """
     params = []
-
     if search_query:
-        # normalize: remove dashes, split into keywords
         keywords = search_query.lower().replace("-", " ").split()
         for kw in keywords:
             kw_like = f"%{kw}%"
@@ -161,86 +216,38 @@ def fetch_all_schedules(search_query=None):
 
     for r in rows:
         r['day_of_week'] = normalize_day(r.get('day_of_week'))
-        if isinstance(r['start_time'], str):
-            try:
-                r['start_time'] = datetime.strptime(r['start_time'], '%H:%M:%S').time()
-            except:
-                r['start_time'] = datetime.strptime(r['start_time'], '%H:%M').time()
-        if isinstance(r['end_time'], str):
-            try:
-                r['end_time'] = datetime.strptime(r['end_time'], '%H:%M:%S').time()
-            except:
-                r['end_time'] = datetime.strptime(r['end_time'], '%H:%M').time()
+        r['start_time'] = convert_timedelta_to_time(r['start_time'])
+        r['end_time'] = convert_timedelta_to_time(r['end_time'])
         r['start_time_12'] = format_time_12hr(r['start_time'])
         r['end_time_12'] = format_time_12hr(r['end_time'])
     return rows
 
 # ------------------------
-# view all schedules + search
+# Routes
 # ------------------------
 @load_bp.route('/', methods=['GET'])
 @admin_required
 def view_all_schedules():
+    """View all schedules with optional search query."""
     q = request.args.get("q", "").strip()
     schedules = fetch_all_schedules(search_query=q if q else None)
     return render_template(
         "schedules/view.html",
         schedules=schedules,
-        search_title=q if q else None   # <-- pass to template
+        search_title=q if q else None
     )
 
-# ------------------------
-# final grid view (optional timetable)
-# ------------------------
 @load_bp.route('/final', methods=['GET'])
 @admin_required
 def view_final_schedule():
-    sql = """
-        SELECT sc.day_of_week, sc.start_time, sc.end_time,
-               sb.code AS subject_code, sb.name AS subject_name, IFNULL(sb.units,0) AS units,
-               sb.year_level, sb.section, sb.course,
-               ins.name AS instructor_name,
-               rm.room_number, rm.room_type
-        FROM schedules sc
-        JOIN subjects sb ON sc.subject_id = sb.subject_id
-        JOIN instructors ins ON sc.instructor_id = ins.instructor_id
-        JOIN rooms rm ON sc.room_id = rm.room_id
-        WHERE sc.approved = 1
-          AND sb.name IS NOT NULL
-          AND sb.code IS NOT NULL
-          AND sb.year_level IS NOT NULL
-          AND sb.section IS NOT NULL
-          AND sb.course IS NOT NULL
-          AND ins.name IS NOT NULL
-          AND rm.room_number IS NOT NULL
-          AND rm.room_type IS NOT NULL
-    """
-    with db_cursor(dictionary=True) as cursor:
-        cursor.execute(sql)
-        schedules = cursor.fetchall()
-
-    for s in schedules:
-        s['day_of_week'] = normalize_day(s['day_of_week'])
-        if isinstance(s['start_time'], str):
-            try:
-                s['start_time'] = datetime.strptime(s['start_time'], '%H:%M:%S').time()
-            except:
-                s['start_time'] = datetime.strptime(s['start_time'], '%H:%M').time()
-        if isinstance(s['end_time'], str):
-            try:
-                s['end_time'] = datetime.strptime(s['end_time'], '%H:%M:%S').time()
-            except:
-                s['end_time'] = datetime.strptime(s['end_time'], '%H:%M').time()
-        s['start_time_12'] = format_time_12hr(s['start_time'])
-        s['end_time_12'] = format_time_12hr(s['end_time'])
-
+    """View final timetable grid for approved schedules."""
+    schedules = fetch_all_schedules()
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
     grid = {d: [] for d in days}
     for s in schedules:
         if s['day_of_week'] in grid:
             grid[s['day_of_week']].append(s)
     time_slots = [{"time": time(h, 0), "label": f"{h:02d}:00"} for h in range(7, 20)]
-
     return render_template(
         "schedules/view.html",
         grid=grid,
@@ -248,59 +255,21 @@ def view_final_schedule():
         time_slots=time_slots
     )
 
-# ------------------------
-# copy view (searched data only)
-# ------------------------
 @load_bp.route('/copy', methods=['GET'])
 @admin_required
 def view_copy():
+    """View copy of searched schedules in half-hour grid format."""
     q = request.args.get("q", "").strip()
     schedules = fetch_all_schedules(search_query=q if q else None)
 
-    # Normalize start and end times to datetime.time
-    for sched in schedules:
-        if isinstance(sched['start_time'], timedelta):
-            total_seconds = int(sched['start_time'].total_seconds())
-            sched['start_time'] = time(total_seconds // 3600, (total_seconds % 3600) // 60)
-        if isinstance(sched['end_time'], timedelta):
-            total_seconds = int(sched['end_time'].total_seconds())
-            sched['end_time'] = time(total_seconds // 3600, (total_seconds % 3600) // 60)
-
-    # Build days and half-hour time slots
     days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    time_slots = []
-    for h in range(7, 20):  # 7:00 AM - 7:00 PM
-        time_slots.append(time(h, 0))
-        time_slots.append(time(h, 30))
-
-    # Initialize grid with placeholders
-    grid = {day: [None] * len(time_slots) for day in days}
+    time_slots = build_time_slots()
+    grid = initialize_grid(days, len(time_slots))
 
     for sched in schedules:
-        start = sched['start_time']
-        end = sched['end_time']
-        if not start or not end or sched['day_of_week'] not in days:
-            continue
-
-        # Find matching slot indices
-        try:
-            start_idx = next(i for i, t in enumerate(time_slots) if t >= start)
-        except StopIteration:
-            continue
-        try:
-            end_idx = next(i for i, t in enumerate(time_slots) if t > end)
-        except StopIteration:
-            end_idx = len(time_slots)
-
-
-        duration = end_idx - start_idx
-        if duration <= 0:
-            continue
-
-        # Insert schedule into grid
-        grid[sched['day_of_week']][start_idx] = {**sched, "rowspan": duration}
-        for i in range(start_idx + 1, end_idx):
-            grid[sched['day_of_week']][i] = "skip"
+        sched['start_time'] = convert_timedelta_to_time(sched['start_time'])
+        sched['end_time'] = convert_timedelta_to_time(sched['end_time'])
+        insert_schedule_into_grid(grid, sched, days, time_slots)
 
     return render_template(
         "schedules/copy.html",
