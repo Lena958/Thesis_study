@@ -4,11 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Room</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/rooms.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
 </head>
+
 <body>
+
   <!-- Topbar -->
   <div class="topbar">
     <h1>College of Computing and Information Sciences</h1>
@@ -16,24 +19,29 @@
     <div class="topbar-profile">
       {% if instructor_image %}
         <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
-             alt="Profile Image"
+             alt="Profile"
              class="profile-pic" />
       {% else %}
         <i class="fas fa-user-circle profile-icon"></i>
       {% endif %}
 
-      <a href="#" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
+      <!-- Logout Button -->
+      <button type="button"
+              class="logout-btn"
+              title="Logout"
+              onclick="openLogoutModal(event)">
         <i class="fas fa-sign-out-alt"></i> Logout
-      </a>
+      </button>
     </div>
   </div>
 
   <!-- Sidebar -->
   <div class="sidebar">
     <div class="sidebar-user">
-      <img src="{{ url_for('static', filename='images/brand.png') }}" 
-           alt="CCISS Logo" 
+      <img src="{{ url_for('static', filename='images/brand.png') }}"
+           alt="CCISS Logo"
            class="sidebar-logo">
+
       {% if instructor_name %}
         <p><strong>{{ instructor_name }}</strong></p>
       {% else %}
@@ -49,15 +57,24 @@
     <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
     <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
     <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-    <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>     
+    <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
   </div>
 
-  <!-- Logout Confirmation Modal -->
+  <!-- Logout Modal -->
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-      <span class="close" onclick="closeLogoutModal()">&times;</span>
+
+      <!-- Close Button -->
+      <button type="button"
+              class="close"
+              aria-label="Close logout modal"
+              onclick="closeLogoutModal()">
+        &times;
+      </button>
+
       <h3>Confirm Logout</h3>
       <p>Are you sure you want to logout?</p>
+
       <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
         <button type="submit" class="btn btn-danger">Logout</button>
         <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
@@ -67,27 +84,33 @@
 
   <!-- Main Content -->
   <div class="main-content">
+
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      <ul class="flashes">
-        {% for category, message in messages %}
-          <li class="{{ category }}">{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
+      {% if messages %}
+        <ul class="flashes">
+          {% for category, message in messages %}
+            <li class="{{ category }}">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
     {% endwith %}
 
     <!-- Add Room Form -->
     <div class="main-form">
-      <form method="POST" action="{{ url_for('rooms.add_room') }}" enctype="multipart/form-data">
+      <form method="POST"
+            action="{{ url_for('rooms.add_room') }}"
+            enctype="multipart/form-data">
+
         <h2 class="form-title">Add Room</h2>
 
-        <!-- Room Number -->
         <label for="room_number">Room Number:</label>
-        <input type="text" name="room_number" id="room_number" placeholder="e.g. CL1, Lab 204" required>
+        <input type="text"
+               name="room_number"
+               id="room_number"
+               placeholder="e.g. CL1, Lab 204"
+               required>
 
-        <!-- Room Type -->
         <label for="room_type">Room Type:</label>
         <select name="room_type" id="room_type" required>
           <option value="" disabled selected>Select type</option>
@@ -95,27 +118,39 @@
           <option value="Lab">Lab</option>
         </select>
 
-        <!-- Program (Dynamic from rooms_program) -->
         <label for="program">Program:</label>
-        <input type="text" name="program" id="program" list="programList" placeholder="Select or enter program">
+        <input type="text"
+               name="program"
+               id="program"
+               list="programList"
+               placeholder="Select or enter program">
+
         <datalist id="programList">
           {% for program in programs %}
             <option value="{{ program.program_name }}">
           {% endfor %}
         </datalist>
 
-        <!-- Room Image -->
         <label for="image">Room Image (optional):</label>
-        <input type="file" name="image" id="image" accept="image/png, image/jpeg, image/jpg">
+        <input type="file"
+               name="image"
+               id="image"
+               accept="image/png, image/jpeg, image/jpg">
 
-        <!-- Buttons -->
         <button type="submit" class="btn">Add Room</button>
-        <a href="{{ url_for('rooms.list_rooms') }}" class="btn btn-secondary">Cancel</a>
+
+        <!-- Cancel Button -->
+        <button type="button"
+                class="btn btn-secondary"
+                onclick="globalThis.location.href='{{ url_for('rooms.list_rooms') }}';">
+          Cancel
+        </button>
+
       </form>
     </div>
   </div>
 
-  <!-- Scripts -->
+  <!-- JavaScript -->
   <script>
     function openLogoutModal(event) {
       event.preventDefault();
@@ -126,12 +161,13 @@
       document.getElementById('logoutModal').style.display = 'none';
     }
 
-    window.onclick = function(event) {
+    globalThis.onclick = function(event) {
       const logoutModal = document.getElementById('logoutModal');
       if (event.target === logoutModal) {
         logoutModal.style.display = "none";
       }
     };
   </script>
+
 </body>
 </html>

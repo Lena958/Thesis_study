@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Rooms</title>
+
     <link rel="stylesheet" href="{{ url_for('static', filename='css/rooms.css') }}" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
 
-    <!-- Delete Modal -->
     <script>
         function openDeleteModal(roomId, roomNumber) {
             document.getElementById('roomName').innerText = roomNumber;
@@ -19,10 +19,7 @@
         function closeDeleteModal() {
             document.getElementById('deleteModal').style.display = 'none';
         }
-    </script>
 
-    <!-- Logout Modal -->
-    <script>
         function openLogoutModal(event) {
             event.preventDefault();
             document.getElementById('logoutModal').style.display = 'block';
@@ -32,7 +29,7 @@
             document.getElementById('logoutModal').style.display = 'none';
         }
 
-        window.onclick = function(event) {
+        globalThis.onclick = function (event) {
             const deleteModal = document.getElementById('deleteModal');
             const logoutModal = document.getElementById('logoutModal');
 
@@ -46,29 +43,44 @@
     <!-- Topbar -->
     <div class="topbar">
         <h1>College of Computing and Information Sciences</h1>
+
         <div class="topbar-profile">
             {% if instructor_image %}
-            <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}" alt="Profile Image" class="profile-pic" />
+                <img
+                    src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
+                    alt="Instructor profile"
+                    class="profile-pic"
+                />
             {% else %}
-            <i class="fas fa-user-circle profile-icon"></i>
+                <i class="fas fa-user-circle profile-icon"></i>
             {% endif %}
 
-            <a href="#" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
+            <button
+                type="button"
+                class="logout-btn"
+                title="Logout"
+                onclick="openLogoutModal(event)"
+            >
                 <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+            </button>
         </div>
     </div>
 
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-user">
-            <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="sidebar-logo">
+            <img
+                src="{{ url_for('static', filename='images/brand.png') }}"
+                alt="CCISS logo"
+                class="sidebar-logo"
+            >
             {% if instructor_name %}
                 <p><strong>{{ instructor_name }}</strong></p>
             {% else %}
                 <p><em>Instructor name not found</em></p>
             {% endif %}
         </div>
+
         <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
         <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
         <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
@@ -77,7 +89,7 @@
         <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
         <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
         <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-        <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>     
+        <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
     </div>
 
     <!-- Main Content -->
@@ -91,15 +103,27 @@
             <div class="left">
                 <a href="{{ url_for('rooms.add_room') }}" class="btn">Add Room</a>
             </div>
+
             <div class="right search-box">
                 <div class="search-container">
-                    <input type="text" placeholder="Search..." id="roomSearch" onkeyup="filterRooms(); toggleClearButton()" />
-                    <span class="clear-btn" onclick="clearSearch()">×</span>
+                    <input
+                        type="text"
+                        placeholder="Search..."
+                        id="roomSearch"
+                        onkeyup="filterRooms(); toggleClearButton()"
+                    />
+                    <button
+                        type="button"
+                        class="clear-btn"
+                        aria-label="Clear search"
+                        onclick="clearSearch()"
+                    >
+                        ×
+                    </button>
                 </div>
             </div>
         </div>
 
-        <!-- Flash messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             <ul class="flashes">
@@ -118,7 +142,7 @@
                         <th>Room Number</th>
                         <th>Room Type</th>
                         <th>Programs</th>
-                        <th>Image</th>
+                        <th>Room</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -127,25 +151,27 @@
                     <tr>
                         <td>{{ room.room_number }}</td>
                         <td>{{ room.room_type|capitalize }}</td>
-                        <td>
-                            {% if room.programs %}
-                                {{ room.programs | join(', ') }}
-                            {% else %}
-                                —
-                            {% endif %}
-                        </td>
+                        <td>{{ room.programs | join(', ') if room.programs else '—' }}</td>
                         <td>
                             {% if room.image %}
-                                <img src="{{ url_for('static', filename='room_images/' ~ room.image) }}" 
-                                     alt="Room {{ room.room_number }}" 
-                                     style="width:60px; height:auto; border-radius:4px;">
+                                <img
+                                    src="{{ url_for('static', filename='room_images/' ~ room.image) }}"
+                                    alt="Room {{ room.room_number }}"
+                                    style="width:60px; height:auto; border-radius:4px;"
+                                >
                             {% else %}
                                 <em>No image</em>
                             {% endif %}
                         </td>
                         <td>
                             <a href="{{ url_for('rooms.edit_room', room_id=room.room_id) }}" class="btn btn-small">Edit</a>
-                            <button class="btn btn-small btn-danger" onclick="openDeleteModal('{{ room.room_id }}', '{{ room.room_number }}')">Delete</button>
+                            <button
+                                type="button"
+                                class="btn btn-small btn-danger"
+                                onclick="openDeleteModal('{{ room.room_id }}', '{{ room.room_number }}')"
+                            >
+                                Delete
+                            </button>
                         </td>
                     </tr>
                     {% else %}
@@ -161,7 +187,14 @@
     <!-- Delete Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeDeleteModal()">&times;</span>
+            <button
+                type="button"
+                class="close"
+                aria-label="Close delete modal"
+                onclick="closeDeleteModal()"
+            >
+                &times;
+            </button>
             <h3>Confirm Delete</h3>
             <p>Are you sure you want to delete <strong id="roomName"></strong>?</p>
             <form id="deleteForm" method="POST">
@@ -174,45 +207,31 @@
     <!-- Logout Modal -->
     <div id="logoutModal" class="modal">
         <div class="modal-content">
-            <span class="close" onclick="closeLogoutModal()">&times;</span>
+            <button
+                type="button"
+                class="close"
+                aria-label="Close logout modal"
+                onclick="closeLogoutModal()"
+            >
+                &times;
+            </button>
             <h3>Confirm Logout</h3>
             <p>Are you sure you want to logout?</p>
-            <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
+            <form method="GET" action="{{ url_for('logout') }}">
                 <button type="submit" class="btn btn-danger">Logout</button>
                 <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
             </form>
         </div>
     </div>
 
-    <!-- JavaScript for search and clear button -->
     <script>
         function filterRooms() {
-            const input = document.getElementById("roomSearch");
-            const filter = input.value.toLowerCase();
-            const table = document.querySelector(".table-container table");
-            const tr = table.getElementsByTagName("tr");
+            const filter = document.getElementById("roomSearch").value.toLowerCase();
+            const rows = document.querySelectorAll(".table-container tbody tr");
 
-            for (let i = 1; i < tr.length; i++) { // Skip header
-                const tdRoomNumber = tr[i].getElementsByTagName("td")[0];
-                const tdRoomType = tr[i].getElementsByTagName("td")[1];
-                const tdProgram = tr[i].getElementsByTagName("td")[2];
-
-                if (tdRoomNumber || tdRoomType || tdProgram) {
-                    const roomNumberText = tdRoomNumber ? tdRoomNumber.textContent.toLowerCase() : '';
-                    const roomTypeText = tdRoomType ? tdRoomType.textContent.toLowerCase() : '';
-                    const programText = tdProgram ? tdProgram.textContent.toLowerCase() : '';
-
-                    if (
-                        roomNumberText.includes(filter) ||
-                        roomTypeText.includes(filter) ||
-                        programText.includes(filter)
-                    ) {
-                        tr[i].style.display = "";
-                    } else {
-                        tr[i].style.display = "none";
-                    }
-                }
-            }
+            rows.forEach(row => {
+                row.style.display = row.innerText.toLowerCase().includes(filter) ? "" : "none";
+            });
         }
 
         function clearSearch() {
@@ -224,9 +243,8 @@
         }
 
         function toggleClearButton() {
-            const input = document.getElementById('roomSearch');
             const clearBtn = document.querySelector('.clear-btn');
-            clearBtn.style.display = input.value ? 'block' : 'none';
+            clearBtn.style.display = document.getElementById('roomSearch').value ? 'block' : 'none';
         }
     </script>
 </body>

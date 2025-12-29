@@ -7,60 +7,34 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/subjects.css') }}" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
+
     <style>
-        /* Additional styles for grouped table */
-        .instructor-group {
-            background-color: #f8fafc;
-        }
-        
-        .instructor-name {
-            font-weight: 600;
-            background-color: #e8f0fe;
-            vertical-align: top;
-        }
-        
-        .program-cell {
-            font-weight: 500;
-            vertical-align: top;
-        }
-        
-        /* Ensure proper table borders */
-        table {
-            border-collapse: collapse;
-        }
-        
-        th, td {
-            border: 1px solid #ddd;
-            padding: 8px 12px;
-        }
-        
-        /* Action buttons styling */
-        .action-buttons {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-        
-        .btn-small {
-            padding: 4px 8px;
-            font-size: 0.8rem;
-        }
+        .instructor-group { background-color: #f8fafc; }
+        .instructor-name { font-weight: 600; background-color: #e8f0fe; vertical-align: top; }
+        .program-cell { font-weight: 500; vertical-align: top; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px 12px; }
+        .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+        .btn-small { padding: 4px 8px; font-size: 0.8rem; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 8px; width: 400px; max-width: 90%; }
+        .close { cursor: pointer; float: right; font-size: 1.2rem; border: none; background: none; }
+        .flash-message { margin: 10px 0; padding: 10px; background-color: #f0f4f8; border-left: 4px solid #2196F3; }
     </style>
 </head>
+
 <body>
-     <div class="topbar">
+    <!-- Topbar -->
+    <div class="topbar">
         <h1>College of Computing and Information Sciences</h1>
 
         <div class="topbar-profile">
             {% if instructor_image %}
-            <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
-                alt="Profile Image"
-                class="profile-pic" />
+                <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}" alt="Profile" class="profile-pic" />
             {% else %}
-            <i class="fas fa-user-circle profile-icon"></i>
+                <i class="fas fa-user-circle profile-icon"></i>
             {% endif %}
-
-            <a href="#" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
+            <a href="#" id="logoutBtn" class="logout-btn" title="Logout">
                 <i class="fas fa-sign-out-alt"></i> Logout
             </a>
         </div>
@@ -69,31 +43,31 @@
     <!-- Sidebar -->
     <div class="sidebar">
         <div class="sidebar-user">
-            <img src="{{ url_for('static', filename='images/brand.png') }}" 
-            alt="CCISS Logo" 
-            class="sidebar-logo">
+            <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="sidebar-logo">
             {% if instructor_name %}
                 <p><strong>{{ instructor_name }}</strong></p>
             {% else %}
                 <p><em>Instructor name not found</em></p>
             {% endif %}
         </div>
-            <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-            <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-            <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-            <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
-            <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-            <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-            <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-            <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>     
-        </div>
+        <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+        <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
+        <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
+        <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
+        <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
+        <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
+        <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
+        <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
+        <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>     
+    </div>
 
+    <!-- Main Content -->
     <div class="main-content">
-         <div class="welcome-card">
+        <div class="welcome-card">
             <h2>Admin, {{ instructor_name or 'Instructor' }}!</h2>
             <p>Here's where you can assign subjects to each instructor while keeping their loads within the maximum allowed units.</p>
         </div>
+
         <div class="table-header">
             <a href="{{ url_for('subjects.add_subject') }}" class="btn">Load New Subject</a>
         </div>
@@ -120,40 +94,30 @@
                 </thead>
                 <tbody>
                     {% if subjects %}
-                        {# Group subjects by instructor #}
                         {% set instructors = {} %}
                         {% for subject in subjects %}
-                            {% set instructor_key = subject.instructor_name or "Unassigned" %}
-                            {% if instructor_key not in instructors %}
-                                {% set _ = instructors.update({instructor_key: []}) %}
-                            {% endif %}
-                            {% set _ = instructors[instructor_key].append(subject) %}
+                            {% set key = subject.instructor_name or "Unassigned" %}
+                            {% if key not in instructors %}{% set _ = instructors.update({key: []}) %}{% endif %}
+                            {% set _ = instructors[key].append(subject) %}
                         {% endfor %}
-                        
-                        {# Display each instructor's subjects #}
+
                         {% for instructor_name, instructor_subjects in instructors.items() %}
-                            {# First, group subjects by program for this instructor #}
                             {% set program_groups = {} %}
                             {% for subject in instructor_subjects %}
-                                {% set program_key = subject.course or "N/A" %}
-                                {% if program_key not in program_groups %}
-                                    {% set _ = program_groups.update({program_key: []}) %}
-                                {% endif %}
-                                {% set _ = program_groups[program_key].append(subject) %}
+                                {% set prog = subject.course or "N/A" %}
+                                {% if prog not in program_groups %}{% set _ = program_groups.update({prog: []}) %}{% endif %}
+                                {% set _ = program_groups[prog].append(subject) %}
                             {% endfor %}
-                            
-                            {# Calculate total number of rows needed for this instructor #}
+
                             {% set total_rows = instructor_subjects|length %}
-                            
-                            {# Display first program's subjects #}
                             {% set first_program = instructor_subjects[0].course or "N/A" %}
                             {% set first_program_subjects = program_groups[first_program] %}
-                            {% set first_program_rowspan = first_program_subjects|length %}
-                            
-                            {# First row - show instructor and first program #}
+                            {% set first_rowspan = first_program_subjects|length %}
+
+                            <!-- First row -->
                             <tr class="instructor-group">
                                 <td rowspan="{{ total_rows }}" class="instructor-name">{{ instructor_name }}</td>
-                                <td rowspan="{{ first_program_rowspan }}" class="program-cell">{{ first_program }}</td>
+                                <td rowspan="{{ first_rowspan }}" class="program-cell">{{ first_program }}</td>
                                 <td>{{ instructor_subjects[0].code }}</td>
                                 <td>{{ instructor_subjects[0].name }}</td>
                                 <td>{{ instructor_subjects[0].units }}</td>
@@ -162,145 +126,163 @@
                                 <td>
                                     <div class="action-buttons">
                                         <a href="{{ url_for('subjects.edit_subject', subject_id=instructor_subjects[0].subject_id) }}" class="btn btn-small">Edit</a>
-                                        <button type="button" class="btn btn-danger btn-small" onclick="openDeleteModal('{{ instructor_subjects[0].subject_id }}', '{{ instructor_subjects[0].name }}')">Delete</button>
-                                        
+                                        <button type="button" class="btn btn-danger btn-small deleteBtn" data-subject-id="{{ instructor_subjects[0].subject_id }}" data-subject-name="{{ instructor_subjects[0].name }}">Delete</button>
                                     </div>
                                 </td>
                             </tr>
-                            
-                            {# Remaining rows for the first program #}
+
+                            <!-- Remaining rows for first program -->
                             {% for i in range(1, first_program_subjects|length) %}
-                                {% set subject = first_program_subjects[i] %}
+                                {% set sub = first_program_subjects[i] %}
                                 <tr>
-                                    <td>{{ subject.code }}</td>
-                                    <td>{{ subject.name }}</td>
-                                    <td>{{ subject.units }}</td>
-                                    <td>{{ subject.year_level }}</td>
-                                    <td>{{ subject.section }}</td>
+                                    <td>{{ sub.code }}</td>
+                                    <td>{{ sub.name }}</td>
+                                    <td>{{ sub.units }}</td>
+                                    <td>{{ sub.year_level }}</td>
+                                    <td>{{ sub.section }}</td>
                                     <td>
                                         <div class="action-buttons">
-                                            <a href="{{ url_for('subjects.edit_subject', subject_id=subject.subject_id) }}" class="btn btn-small">Edit</a>
-                                            <button type="button" class="btn btn-danger btn-small" onclick="openDeleteModal('{{ subject.subject_id }}', '{{ subject.name }}')">Delete</button>
+                                            <a href="{{ url_for('subjects.edit_subject', subject_id=sub.subject_id) }}" class="btn btn-small">Edit</a>
+                                            <button type="button" class="btn btn-danger btn-small deleteBtn" data-subject-id="{{ sub.subject_id }}" data-subject-name="{{ sub.name }}">Delete</button>
                                         </div>
                                     </td>
                                 </tr>
                             {% endfor %}
-                            
-                            {# Now display subjects for remaining programs #}
+
                             {% set displayed_programs = [first_program] %}
-                            
-                            {% for program, program_subjects in program_groups.items() %}
-                                {% if program not in displayed_programs %}
-                                    {# First row for this program - show program with rowspan #}
+                            {% for prog, prog_subjects in program_groups.items() %}
+                                {% if prog not in displayed_programs %}
                                     <tr>
-                                        <td rowspan="{{ program_subjects|length }}" class="program-cell">{{ program }}</td>
-                                        <td>{{ program_subjects[0].code }}</td>
-                                        <td>{{ program_subjects[0].name }}</td>
-                                        <td>{{ program_subjects[0].units }}</td>
-                                        <td>{{ program_subjects[0].year_level }}</td>
-                                        <td>{{ program_subjects[0].section }}</td>
+                                        <td rowspan="{{ prog_subjects|length }}" class="program-cell">{{ prog }}</td>
+                                        <td>{{ prog_subjects[0].code }}</td>
+                                        <td>{{ prog_subjects[0].name }}</td>
+                                        <td>{{ prog_subjects[0].units }}</td>
+                                        <td>{{ prog_subjects[0].year_level }}</td>
+                                        <td>{{ prog_subjects[0].section }}</td>
                                         <td>
                                             <div class="action-buttons">
-                                                <a href="{{ url_for('subjects.edit_subject', subject_id=program_subjects[0].subject_id) }}" class="btn btn-small">Edit</a>
-                                                <button type="button" class="btn btn-danger btn-small" onclick="openDeleteModal('{{ program_subjects[0].subject_id }}', '{{ program_subjects[0].name }}')">Delete</button>
+                                                <a href="{{ url_for('subjects.edit_subject', subject_id=prog_subjects[0].subject_id) }}" class="btn btn-small">Edit</a>
+                                                <button type="button" class="btn btn-danger btn-small deleteBtn" data-subject-id="{{ prog_subjects[0].subject_id }}" data-subject-name="{{ prog_subjects[0].name }}">Delete</button>
                                             </div>
                                         </td>
                                     </tr>
-                                    
-                                    {# Remaining rows for this program #}
-                                    {% for i in range(1, program_subjects|length) %}
-                                        {% set subject = program_subjects[i] %}
+
+                                    {% for i in range(1, prog_subjects|length) %}
+                                        {% set sub = prog_subjects[i] %}
                                         <tr>
-                                            <td>{{ subject.code }}</td>
-                                            <td>{{ subject.name }}</td>
-                                            <td>{{ subject.units }}</td>
-                                            <td>{{ subject.year_level }}</td>
-                                            <td>{{ subject.section }}</td>
+                                            <td>{{ sub.code }}</td>
+                                            <td>{{ sub.name }}</td>
+                                            <td>{{ sub.units }}</td>
+                                            <td>{{ sub.year_level }}</td>
+                                            <td>{{ sub.section }}</td>
                                             <td>
                                                 <div class="action-buttons">
-                                                    <a href="{{ url_for('subjects.edit_subject', subject_id=subject.subject_id) }}" class="btn btn-small">Edit</a>
-                                                    <button type="button" class="btn btn-danger btn-small" onclick="openDeleteModal('{{ subject.subject_id }}', '{{ subject.name }}')">Delete</button>
-                                                    <a href="{{ url_for('subjects.view_subject', subject_id=subject.subject_id) }}" class="btn btn-secondary btn-small">View</a>
+                                                    <a href="{{ url_for('subjects.edit_subject', subject_id=sub.subject_id) }}" class="btn btn-small">Edit</a>
+                                                    <button type="button" class="btn btn-danger btn-small deleteBtn" data-subject-id="{{ sub.subject_id }}" data-subject-name="{{ sub.name }}">Delete</button>
+                                                    <a href="{{ url_for('subjects.view_subject', subject_id=sub.subject_id) }}" class="btn btn-secondary btn-small">View</a>
                                                 </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
-                                    
-                                    {% set _ = displayed_programs.append(program) %}
+                                    {% set _ = displayed_programs.append(prog) %}
                                 {% endif %}
                             {% endfor %}
                         {% endfor %}
                     {% else %}
-                        <tr>
-                            <td colspan="8" style="text-align:center;">No subjects found.</td>
-                        </tr>
+                        <tr><td colspan="8" style="text-align:center;">No subjects found.</td></tr>
                     {% endif %}
                 </tbody>
             </table>
         </div>
     </div>
 
-<script>
-    function openDeleteModal(subjectId, subjectName) {
-        document.getElementById('subjectName').innerText = subjectName;
-        document.getElementById('deleteForm').action = `/admin/subjects/delete/${subjectId}`;
-        document.getElementById('deleteModal').style.display = 'block';
-    }
+    <!-- Delete Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <button class="close cancelBtn" aria-label="Close delete modal">&times;</button>
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete <strong id="subjectName"></strong>?</p>
+            <form id="deleteForm" method="POST">
+                <button type="submit" class="btn btn-danger">Delete</button>
+                <button type="button" class="btn btn-secondary cancelBtn">Cancel</button>
+            </form>
+        </div>
+    </div>
 
-    function closeDeleteModal() {
-        document.getElementById('deleteModal').style.display = 'none';
-    }
+    <!-- Logout Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content">
+            <button class="close cancelBtn" aria-label="Close logout modal">&times;</button>
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
+            <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
+                <button type="submit" class="btn btn-danger">Logout</button>
+                <button type="button" class="btn btn-secondary cancelBtn">Cancel</button>
+            </form>
+        </div>
+    </div>
 
-    window.onclick = function(event) {
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
         const deleteModal = document.getElementById('deleteModal');
         const logoutModal = document.getElementById('logoutModal');
+        const subjectNameEl = document.getElementById('subjectName');
+        const deleteForm = document.getElementById('deleteForm');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const clearBtn = document.querySelector('.clear-btn');
+        const searchInput = document.getElementById('subjectSearch');
 
-        if (event.target === deleteModal) {
-            deleteModal.style.display = "none";
+        // Delete buttons
+        document.querySelectorAll('.deleteBtn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                subjectNameEl.innerText = btn.dataset.subjectName;
+                deleteForm.action = `/admin/subjects/delete/${btn.dataset.subjectId}`;
+                deleteModal.style.display = 'block';
+            });
+        });
+
+        // Modal close/cancel
+        deleteModal.querySelectorAll('.close, .cancelBtn').forEach(btn => {
+            btn.addEventListener('click', () => deleteModal.style.display = 'none');
+        });
+        logoutModal.querySelectorAll('.close, .cancelBtn').forEach(btn => {
+            btn.addEventListener('click', () => logoutModal.style.display = 'none');
+        });
+
+        // Logout modal
+        logoutBtn.addEventListener('click', e => {
+            e.preventDefault();
+            logoutModal.style.display = 'block';
+        });
+
+        // Click outside modal closes it using globalThis
+        globalThis.addEventListener('click', e => {
+            if (e.target === deleteModal) deleteModal.style.display = 'none';
+            if (e.target === logoutModal) logoutModal.style.display = 'none';
+        });
+
+        // Search filter
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const filter = searchInput.value.toLowerCase();
+                document.querySelectorAll('.table-container tbody tr').forEach(row => {
+                    row.style.display = row.innerText.toLowerCase().includes(filter) ? '' : 'none';
+                });
+                if (clearBtn) clearBtn.style.display = searchInput.value ? 'block' : 'none';
+            });
         }
 
-        if (event.target === logoutModal) {
-            logoutModal.style.display = "none";
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchInput.focus();
+                document.querySelectorAll('.table-container tbody tr').forEach(row => row.style.display = '');
+                clearBtn.style.display = 'none';
+            });
         }
-    };
-</script>
-
-<!-- Delete Confirmation Modal -->
-<div id="deleteModal" class="modal">
-  <div class="modal-content">
-    <span class="close" onclick="closeDeleteModal()">&times;</span>
-    <h3>Confirm Delete</h3>
-    <p>Are you sure you want to delete <strong id="subjectName"></strong>?</p>
-    <form id="deleteForm" method="POST">
-      <button type="submit" class="btn btn-danger">Delete</button>
-      <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-    </form>
-  </div>
-</div>
-
-<!-- Logout Confirmation Modal -->
-<div id="logoutModal" class="modal">
-    <div class="modal-content">
-        <span class="close" onclick="closeLogoutModal()">&times;</span>
-        <h3>Confirm Logout</h3>
-        <p>Are you sure you want to logout?</p>
-        <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
-            <button type="submit" class="btn btn-danger">Logout</button>
-            <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-        </form>
-    </div>
-</div>
-
-<script>
-    function openLogoutModal(event) {
-        event.preventDefault();
-        document.getElementById('logoutModal').style.display = 'block';
-    }
-
-    function closeLogoutModal() {
-        document.getElementById('logoutModal').style.display = 'none';
-    }
-</script>
+    });
+    </script>
 
 </body>
 </html>
+

@@ -4,162 +4,155 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Instructors</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/instructors.css') }}">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
-  <!-- Include jsPDF library -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+  <!-- PDF libs -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
-    /* Download button styling */
     .btn-download {
-      background-color: #28a745;
-      color: white;
+      background-color: #218838; /* darker for contrast */
+      color: #ffffff;
       padding: 8px 16px;
-      text-decoration: none;
       border-radius: 4px;
       display: inline-flex;
       align-items: center;
       gap: 5px;
       font-size: 14px;
-      transition: background-color 0.3s;
-      margin-left: 10px;
+      border: none;
+      cursor: pointer;
     }
-    
+
     .btn-download:hover {
-      background-color: #218838;
+      background-color: #1e7e34;
     }
-    
-    /* Filter styling */
+
     .filter-container {
       display: inline-flex;
       align-items: center;
       margin-left: 10px;
     }
-    
+
     .filter-label {
       margin-right: 8px;
-      font-weight: 500;
-      color: #333;
+      font-weight: 600;
+      color: #212529;
     }
-    
+
     .filter-select {
       padding: 8px 12px;
-      border: 1px solid #ddd;
+      border: 1px solid #ced4da;
       border-radius: 4px;
-      background-color: white;
       font-size: 14px;
-      cursor: pointer;
     }
-    
-    .filter-select:focus {
-      outline: none;
-      border-color: #4a90e2;
-      box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
-    }
-    
-    /* Table header layout */
+
     .table-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 20px;
     }
-    
+
     .table-header-actions {
       display: flex;
       align-items: center;
       gap: 10px;
     }
-    
-    /* Hidden element for PDF generation */
+
     .pdf-template {
       position: absolute;
       left: -9999px;
       top: -9999px;
       width: 800px;
-      background: white;
+      background: #ffffff;
       padding: 20px;
     }
   </style>
 </head>
+
 <body>
- <div class="topbar">
-        <h1>College of Computing and Information Sciences</h1>
+  <!-- Topbar -->
+  <div class="topbar">
+    <h1>College of Computing and Information Sciences</h1>
 
-        <div class="topbar-profile">
-            {% if instructor_image %}
-            <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
-                alt="Profile Image"
-                class="profile-pic" />
-            {% else %}
-            <i class="fas fa-user-circle profile-icon"></i>
-            {% endif %}
+    <div class="topbar-profile">
+      {% if instructor_image %}
+        <img
+          src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
+          alt="Instructor profile"
+          class="profile-pic"
+        >
+      {% else %}
+        <i class="fas fa-user-circle profile-icon"></i>
+      {% endif %}
 
-            <a href="#" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
-        </div>
+      <button
+        type="button"
+        class="logout-btn"
+        title="Logout"
+        onclick="openLogoutModal(event)"
+      >
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-user">
+      <img
+        src="{{ url_for('static', filename='images/brand.png') }}"
+        alt="CCISS logo"
+        class="sidebar-logo"
+      >
+      <p><strong>{{ instructor_name or 'Instructor' }}</strong></p>
     </div>
 
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-user">
-            <img src="{{ url_for('static', filename='images/brand.png') }}" 
-            alt="CCISS Logo" 
-            class="sidebar-logo">
-            {% if instructor_name %}
-                <p><strong>{{ instructor_name }}</strong></p>
-            {% else %}
-                <p><em>Instructor name not found</em></p>
-            {% endif %}
-        </div>
-          <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-          <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-          <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-          <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-          <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
-          <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-          <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-          <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-          <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>     
-    </div>
+    <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
+    <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
+    <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
+    <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
+    <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
+    <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
+    <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
+    <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
+  </div>
 
-  <!-- Main content -->
+  <!-- Main Content -->
   <div class="main-content">
     <div class="welcome-card">
-            <h2>Admin, {{ instructor_name or 'Instructor' }}!</h2>
-            <p>Manage and update instructor information here..</p>
-        </div>
+      <h2>Admin, {{ instructor_name or 'Instructor' }}!</h2>
+      <p>Manage and update instructor information here.</p>
+    </div>
+
     <div class="table-header">
       <a href="{{ url_for('instructors.add_instructor') }}" class="btn">Add Instructor</a>
-      
+
       <div class="table-header-actions">
-        <!-- Filter by Status -->
         <div class="filter-container">
-          <label class="filter-label">Filter by Status:</label>
+          <label class="filter-label" for="statusFilter">Filter by Status:</label>
           <select class="filter-select" id="statusFilter" onchange="filterInstructors()">
-            <option value="all">All Status</option>
+            <option value="all">All</option>
             <option value="Permanent">Permanent</option>
             <option value="Part Time">Part Time</option>
           </select>
         </div>
-        
-        <!-- Download Button -->
-        <a href="#" class="btn-download" onclick="downloadInstructorsPDF(event)">
+
+        <button
+          type="button"
+          class="btn-download"
+          onclick="downloadInstructorsPDF(event)"
+        >
           <i class="fas fa-download"></i> Download PDF
-        </a>
+        </button>
       </div>
     </div>
 
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <div class="flash-message success">{{ messages[0] }}</div>
-      {% endif %}
-    {% endwith %}
-
-    <!-- Table -->
     <div class="table-container">
       <table id="instructorsTable">
         <thead>
@@ -174,38 +167,31 @@
         </thead>
         <tbody id="instructorsTableBody">
           {% for instructor in instructors %}
-          <tr data-status="{{ instructor.status or 'N/A' }}">
-            <td data-label="Name">{{ instructor.name }}</td>
-            <td data-label="Max Load Units">{{ instructor.max_load_units }}</td>
-            <td data-label="Department">{{ instructor.department or 'N/A' }}</td>
-            <td data-label="Program">{{ instructor.program or 'N/A' }}</td>
-            <td data-label="Status">{{ instructor.status or 'N/A' }}</td>
-            <td data-label="Actions">
-              <a href="{{ url_for('instructors.edit_instructor', instructor_id=instructor.instructor_id) }}" class="btn btn-small">Edit</a>
-              <button class="btn btn-small btn-danger" onclick="openDeleteModal('{{ instructor.instructor_id }}', '{{ instructor.name }}')">Delete</button>
-            </td>
-          </tr>
+            <tr data-status="{{ instructor.status or 'N/A' }}">
+              <td>{{ instructor.name }}</td>
+              <td>{{ instructor.max_load_units }}</td>
+              <td>{{ instructor.department or 'N/A' }}</td>
+              <td>{{ instructor.program or 'N/A' }}</td>
+              <td>{{ instructor.status or 'N/A' }}</td>
+              <td>
+                <a href="{{ url_for('instructors.edit_instructor', instructor_id=instructor.instructor_id) }}" class="btn btn-small">Edit</a>
+                <button class="btn btn-small btn-danger" onclick="openDeleteModal('{{ instructor.instructor_id }}', '{{ instructor.name }}')">Delete</button>
+              </td>
+            </tr>
           {% else %}
-          <tr>
-            <td colspan="6" style="text-align:center;">No instructors found.</td>
-          </tr>
+            <tr>
+              <td colspan="6" style="text-align:center;">No instructors found.</td>
+            </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
   </div>
 
-  <!-- Hidden PDF Template -->
-  <div id="pdfTemplate" class="pdf-template">
-    <div id="pdfContent">
-      <!-- This will be populated with the instructors content -->
-    </div>
-  </div>
-
-  <!-- Delete Confirmation Modal -->
+  <!-- Delete Modal -->
   <div id="deleteModal" class="modal">
     <div class="modal-content">
-      <span class="close" onclick="closeDeleteModal()">&times;</span>
+      <button type="button" class="close" onclick="closeDeleteModal()" aria-label="Close delete modal">&times;</button>
       <h3>Confirm Delete</h3>
       <p>Are you sure you want to delete <strong id="instructorName"></strong>?</p>
       <form id="deleteForm" method="POST">
@@ -215,198 +201,58 @@
     </div>
   </div>
 
-  <!-- Logout Confirmation Modal -->
-    <div id="logoutModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeLogoutModal()">&times;</span>
-            <h3>Confirm Logout</h3>
-            <p>Are you sure you want to logout?</p>
-            <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
-                <button type="submit" class="btn btn-danger">Logout</button>
-                <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-            </form>
-        </div>
+  <!-- Logout Modal -->
+  <div id="logoutModal" class="modal">
+    <div class="modal-content">
+      <button type="button" class="close" onclick="closeLogoutModal()" aria-label="Close logout modal">&times;</button>
+      <h3>Confirm Logout</h3>
+      <p>Are you sure you want to logout?</p>
+      <form method="GET" action="{{ url_for('logout') }}">
+        <button type="submit" class="btn btn-danger">Logout</button>
+        <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+      </form>
     </div>
+  </div>
 
 <script>
-    function openLogoutModal(event) {
-        event.preventDefault();
-        document.getElementById('logoutModal').style.display = 'block';
-    }
+  function openLogoutModal(event) {
+    event.preventDefault();
+    document.getElementById('logoutModal').style.display = 'block';
+  }
 
-    function closeLogoutModal() {
-        document.getElementById('logoutModal').style.display = 'none';
-    }
+  function closeLogoutModal() {
+    document.getElementById('logoutModal').style.display = 'none';
+  }
 
-    function openDeleteModal(instructorId, instructorName) {
-      document.getElementById('instructorName').innerText = instructorName;
-      document.getElementById('deleteForm').action = `/admin/instructors/delete/${instructorId}`;
-      document.getElementById('deleteModal').style.display = 'block';
-    }
+  function openDeleteModal(id, name) {
+    document.getElementById('instructorName').innerText = name;
+    document.getElementById('deleteForm').action = `/admin/instructors/delete/${id}`;
+    document.getElementById('deleteModal').style.display = 'block';
+  }
 
-    function closeDeleteModal() {
-      document.getElementById('deleteModal').style.display = 'none';
-    }
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+  }
 
-    // Filter instructors by status
-    function filterInstructors() {
-      const filterValue = document.getElementById('statusFilter').value;
-      const rows = document.querySelectorAll('#instructorsTableBody tr');
-      
-      rows.forEach(row => {
-        const status = row.getAttribute('data-status');
-        
-        if (filterValue === 'all' || status === filterValue) {
-          row.style.display = '';
-        } else {
-          row.style.display = 'none';
-        }
-      });
-    }
+  function filterInstructors() {
+    const value = document.getElementById('statusFilter').value;
+    document.querySelectorAll('#instructorsTableBody tr').forEach(row => {
+      row.style.display = value === 'all' || row.dataset.status === value ? '' : 'none';
+    });
+  }
 
-    window.onclick = function(event) {
-      const deleteModal = document.getElementById('deleteModal');
-      const logoutModal = document.getElementById('logoutModal');
-      if (event.target === deleteModal) deleteModal.style.display = "none";
-      if (event.target === logoutModal) logoutModal.style.display = "none";
-    };
+  globalThis.onclick = function (event) {
+    if (event.target === document.getElementById('deleteModal')) closeDeleteModal();
+    if (event.target === document.getElementById('logoutModal')) closeLogoutModal();
+  };
 
-    // Download PDF function for instructors
-    function downloadInstructorsPDF(event) {
-      event.preventDefault();
-      
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Get the instructors table
-      const instructorsTable = document.getElementById('instructorsTable');
-      if (!instructorsTable) {
-        alert('No instructor data available to download.');
-        return;
-      }
-      
-      // Show loading message
-      const downloadBtn = event.target.closest('.btn-download');
-      const originalText = downloadBtn.innerHTML;
-      downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
-      downloadBtn.disabled = true;
-      
-      // Clone the table for PDF generation
-      const pdfTemplate = document.getElementById('pdfTemplate');
-      const pdfContent = document.getElementById('pdfContent');
-      
-      // Clear previous content
-      pdfContent.innerHTML = '';
-      
-      // Add title
-      const title = document.createElement('h2');
-      title.textContent = 'College of Computing and Information Sciences - Instructors';
-      title.style.textAlign = 'center';
-      title.style.marginBottom = '20px';
-      title.style.color = '#2c3e50';
-      pdfContent.appendChild(title);
-      
-      // Get current filter value for PDF title
-      const filterValue = document.getElementById('statusFilter').value;
-      if (filterValue !== 'all') {
-        const filterTitle = document.createElement('h3');
-        filterTitle.textContent = `Status: ${filterValue}`;
-        filterTitle.style.textAlign = 'center';
-        filterTitle.style.marginBottom = '15px';
-        filterTitle.style.color = '#34495e';
-        pdfContent.appendChild(filterTitle);
-      }
-      
-      // Clone and style the table for PDF (without action buttons)
-      const tableClone = instructorsTable.cloneNode(true);
-      tableClone.style.width = '100%';
-      tableClone.style.fontSize = '10px';
-      tableClone.style.borderCollapse = 'collapse';
-      
-      // Remove action column from the clone
-      const headerRow = tableClone.querySelector('thead tr');
-      const headerCells = headerRow.querySelectorAll('th');
-      headerCells[5].remove(); // Remove Actions header
-      
-      const rows = tableClone.querySelectorAll('tbody tr');
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length > 5) {
-          cells[5].remove(); // Remove Actions cells
-        }
-      });
-      
-      // Style table cells for better PDF readability
-      const cells = tableClone.querySelectorAll('th, td');
-      cells.forEach(cell => {
-        cell.style.border = '1px solid #ddd';
-        cell.style.padding = '6px';
-        cell.style.fontSize = '9px';
-      });
-      
-      // Style header cells
-      const headerCellsStyled = tableClone.querySelectorAll('th');
-      headerCellsStyled.forEach(cell => {
-        cell.style.backgroundColor = '#34495e';
-        cell.style.color = 'white';
-        cell.style.fontWeight = 'bold';
-      });
-      
-      pdfContent.appendChild(tableClone);
-      
-      // Add timestamp
-      const timestamp = document.createElement('p');
-      timestamp.textContent = `Generated on: ${new Date().toLocaleString()}`;
-      timestamp.style.marginTop = '15px';
-      timestamp.style.fontSize = '10px';
-      timestamp.style.color = '#7f8c8d';
-      timestamp.style.textAlign = 'center';
-      pdfContent.appendChild(timestamp);
-      
-      // Generate PDF using html2canvas
-      setTimeout(() => {
-        html2canvas(pdfContent, {
-          scale: 2, // Higher quality
-          useCORS: true,
-          logging: false
-        }).then(canvas => {
-          const imgData = canvas.toDataURL('image/png');
-          const imgWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
-          const imgHeight = canvas.height * imgWidth / canvas.width;
-          let heightLeft = imgHeight;
-          let position = 10;
-          
-          doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-          heightLeft -= pageHeight;
-          
-          // Add additional pages if needed
-          while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            doc.addPage();
-            doc.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-          }
-          
-          // Save the PDF with filter info in filename
-          const filterValue = document.getElementById('statusFilter').value;
-          const filterSuffix = filterValue !== 'all' ? `_${filterValue.replace(' ', '_')}` : '';
-          const fileName = `instructors${filterSuffix}_${new Date().toISOString().slice(0, 10)}.pdf`;
-          doc.save(fileName);
-          
-          // Restore button state
-          downloadBtn.innerHTML = originalText;
-          downloadBtn.disabled = false;
-        }).catch(error => {
-          console.error('Error generating PDF:', error);
-          alert('Error generating PDF. Please try again.');
-          
-          // Restore button state
-          downloadBtn.innerHTML = originalText;
-          downloadBtn.disabled = false;
-        });
-      }, 500);
-    }
+  function downloadInstructorsPDF(event) {
+    event.preventDefault();
+    const { jsPDF } = globalThis.jspdf;
+    const doc = new jsPDF();
+    doc.text('Instructors List', 14, 15);
+    doc.save('instructors.pdf');
+  }
 </script>
 </body>
 </html>

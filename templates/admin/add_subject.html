@@ -4,234 +4,254 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Subject</title>
+
   <link rel="stylesheet" href="{{ url_for('static', filename='css/add_subject.css') }}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
 </head>
+
 <body>
+
   <!-- Topbar -->
   <div class="topbar">
-      <h1>College of Computing and Information Sciences</h1>
+    <h1>College of Computing and Information Sciences</h1>
 
-      <div class="topbar-profile">
-          {% if instructor_image %}
-          <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
-              alt="Profile Image"
-              class="profile-pic" />
-          {% else %}
-          <i class="fas fa-user-circle profile-icon"></i>
-          {% endif %}
+    <div class="topbar-profile">
+      {% if instructor_image %}
+        <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
+             alt="Profile"
+             class="profile-pic" />
+      {% else %}
+        <i class="fas fa-user-circle profile-icon"></i>
+      {% endif %}
 
-          <a href="#" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
-              <i class="fas fa-sign-out-alt"></i> Logout
-          </a>
-      </div>
+      <!-- Logout Button -->
+      <button type="button"
+              class="logout-btn"
+              title="Logout"
+              onclick="openLogoutModal(event)">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
   </div>
 
   <!-- Sidebar -->
   <div class="sidebar">
-      <div class="sidebar-user">
-          <img src="{{ url_for('static', filename='images/brand.png') }}" 
-          alt="CCISS Logo" 
-          class="sidebar-logo">
-          {% if instructor_name %}
-              <p><strong>{{ instructor_name }}</strong></p>
-          {% else %}
-              <p><em>Instructor name not found</em></p>
-          {% endif %}
-      </div>
-          <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-          <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-          <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-          <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-          <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
-          <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-          <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-          <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-          <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>     
+    <div class="sidebar-user">
+      <img src="{{ url_for('static', filename='images/brand.png') }}"
+           alt="CCISS Logo"
+           class="sidebar-logo">
+
+      {% if instructor_name %}
+        <p><strong>{{ instructor_name }}</strong></p>
+      {% else %}
+        <p><em>Instructor name not found</em></p>
+      {% endif %}
+    </div>
+
+    <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+    <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
+    <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
+    <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
+    <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
+    <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
+    <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
+    <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
+    <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
   </div>
 
-  <!-- Logout Confirmation Modal -->
+  <!-- Logout Modal -->
   <div id="logoutModal" class="modal">
-      <div class="modal-content">
-          <span class="close" onclick="closeLogoutModal()">&times;</span>
-          <h3>Confirm Logout</h3>
-          <p>Are you sure you want to logout?</p>
-          <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
-              <button type="submit" class="btn btn-danger">Logout</button>
-              <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-          </form>
-      </div>
+    <div class="modal-content">
+
+      <!-- Close Button -->
+      <button type="button"
+              class="close"
+              aria-label="Close logout modal"
+              onclick="closeLogoutModal()">
+        &times;
+      </button>
+
+      <h3>Confirm Logout</h3>
+      <p>Are you sure you want to logout?</p>
+
+      <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
+        <button type="submit" class="btn btn-danger">Logout</button>
+        <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
+      </form>
+    </div>
   </div>
 
   <!-- Main Content -->
   <div class="main-content">
-      <div class="main-form">
-          <form method="POST">
-              <h2 class="form-title">Start Instructor Loading Here</h2>
+    <div class="main-form">
+      <form method="POST">
 
-              <!-- Subject Code -->
-              <label for="code">Course Code:</label>
-              <input list="code-list" name="code" id="code" required>
-              <datalist id="code-list">
-                  {% for c in courses %}
-                      <option value="{{ c.course_code }}">
-                  {% endfor %}
-              </datalist>
+        <h2 class="form-title">Start Instructor Loading Here</h2>
 
-              <!-- Subject Name -->
-              <label for="name">Course Name:</label>
-              <input list="name-list" name="name" id="name" required>
-              <datalist id="name-list">
-                  {% for c in courses %}
-                      <option value="{{ c.course_name }}">
-                  {% endfor %}
-              </datalist>
+        <!-- Subject Code -->
+        <label for="code">Course Code:</label>
+        <input list="code-list" name="code" id="code" required>
+        <datalist id="code-list">
+          {% for c in courses %}
+            <option value="{{ c.course_code }}">
+          {% endfor %}
+        </datalist>
 
-              <!-- Units -->
-              <label for="units">Units:</label>
-              <input list="units-list" type="number" name="units" id="units" required>
-              <datalist id="units-list">
-                  {% for unit in units_list %}
-                      <option value="{{ unit }}">
-                  {% endfor %}
-              </datalist>
+        <!-- Subject Name -->
+        <label for="name">Course Name:</label>
+        <input list="name-list" name="name" id="name" required>
+        <datalist id="name-list">
+          {% for c in courses %}
+            <option value="{{ c.course_name }}">
+          {% endfor %}
+        </datalist>
 
-              <!-- Year Level -->
-              <label for="year_level">Year Level:</label>
-              <input list="yearlevel-list" type="text" name="year_level" id="year_level">
-              <datalist id="yearlevel-list">
-                  {% for level in year_levels_list %}
-                      <option value="{{ level }}">
-                  {% endfor %}
-              </datalist>
+        <!-- Units -->
+        <label for="units">Units:</label>
+        <input list="units-list" type="number" name="units" id="units" required>
+        <datalist id="units-list">
+          {% for unit in units_list %}
+            <option value="{{ unit }}">
+          {% endfor %}
+        </datalist>
 
-              <!-- Section -->
-              <label for="section">Section:</label>
-              <input list="section-list" type="text" name="section" id="section">
-              <datalist id="section-list">
-                  {% for section in sections_list %}
-                      <option value="{{ section }}">
-                  {% endfor %}
-              </datalist>
+        <!-- Year Level -->
+        <label for="year_level">Year Level:</label>
+        <input list="yearlevel-list" type="text" name="year_level" id="year_level">
+        <datalist id="yearlevel-list">
+          {% for level in year_levels_list %}
+            <option value="{{ level }}">
+          {% endfor %}
+        </datalist>
 
-              <!-- Program -->
-              <label for="course">Program:</label>
-              <input list="course-list" name="course" id="course">
-              <datalist id="course-list">
-                  {% for p in programs %}
-                      <option value="{{ p.program }}">
-                  {% endfor %}
-              </datalist>
+        <!-- Section -->
+        <label for="section">Section:</label>
+        <input list="section-list" type="text" name="section" id="section">
+        <datalist id="section-list">
+          {% for section in sections_list %}
+            <option value="{{ section }}">
+          {% endfor %}
+        </datalist>
 
+        <!-- Program -->
+        <label for="course">Program:</label>
+        <input list="course-list" name="course" id="course">
+        <datalist id="course-list">
+          {% for p in programs %}
+            <option value="{{ p.program }}">
+          {% endfor %}
+        </datalist>
 
-              <!-- Instructor -->
-              <label for="instructor_id">Instructor:</label>
-              <select name="instructor_id" id="instructor_id">
-                  <option value="">-- Select Instructor --</option>
-                  {% for instructor in instructors %}
-                      <option value="{{ instructor.instructor_id }}">{{ instructor.name }}</option>
-                  {% endfor %}
-              </select>
+        <!-- Instructor -->
+        <label for="instructor_id">Instructor:</label>
+        <select name="instructor_id" id="instructor_id">
+          <option value="">-- Select Instructor --</option>
+          {% for instructor in instructors %}
+            <option value="{{ instructor.instructor_id }}">{{ instructor.name }}</option>
+          {% endfor %}
+        </select>
 
-              <div class="form-actions"></div>
-              <button type="submit" class="btn">Save Load</button>
-              <a href="{{ url_for('subjects.list_subjects') }}" class="btn btn-secondary">Cancel</a>
-          </form>
-      </div>
+        <div class="form-actions"></div>
+
+        <button type="submit" class="btn">Save Load</button>
+
+        <!-- Cancel Button -->
+        <button type="button"
+                class="btn btn-secondary"
+                onclick="globalThis.location.href='{{ url_for('subjects.list_subjects') }}';">
+          Cancel
+        </button>
+
+      </form>
+    </div>
   </div>
-
 
   <!-- Scripts -->
   <script>
-      function openLogoutModal(event) {
-          event.preventDefault();
-          document.getElementById('logoutModal').style.display = 'block';
+    function openLogoutModal(event) {
+      event.preventDefault();
+      document.getElementById('logoutModal').style.display = 'block';
+    }
+
+    function closeLogoutModal() {
+      document.getElementById('logoutModal').style.display = 'none';
+    }
+
+    globalThis.onclick = function(event) {
+      const logoutModal = document.getElementById('logoutModal');
+      if (event.target === logoutModal) {
+        logoutModal.style.display = "none";
       }
+    };
 
-      function closeLogoutModal() {
-          document.getElementById('logoutModal').style.display = 'none';
-      }
+    /* =============================
+       AUTO-FILL COURSE NAME
+       ============================= */
+    document.addEventListener("DOMContentLoaded", () => {
+      const codeInput = document.getElementById("code");
+      const nameInput = document.getElementById("name");
 
-      window.onclick = function(event) {
-          const logoutModal = document.getElementById('logoutModal');
-          if (event.target === logoutModal) {
-              logoutModal.style.display = "none";
-          }
-      };
+      codeInput.addEventListener("input", () => {
+        const code = codeInput.value.trim();
+        if (!code) return;
 
-
-      /* =============================
-          AUTO-FILL COURSE NAME
-         ============================= */
-
-      document.addEventListener("DOMContentLoaded", () => {
-          const codeInput = document.getElementById("code");
-          const nameInput = document.getElementById("name");
-
-          codeInput.addEventListener("input", () => {
-              const code = codeInput.value.trim();
-              if (!code) return;
-
-              fetch(`/admin/subjects/subject-info?code=${code}`)
-                  .then(res => res.json())
-                  .then(data => {
-                      if (data && data.name) {
-                          nameInput.value = data.name;
-                      }
-                  });
+        fetch(`/admin/subjects/subject-info?code=${code}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.name) {
+              nameInput.value = data.name;
+            }
           });
       });
+    });
 
+    /* =============================
+       FILTER INSTRUCTORS BY PROGRAM
+       ============================= */
+    document.addEventListener("DOMContentLoaded", () => {
+      const courseInput = document.getElementById("course");
+      const instructorSelect = document.getElementById("instructor_id");
 
-      /* =============================
-          FILTER INSTRUCTORS BY PROGRAM
-         ============================= */
+      courseInput.addEventListener("input", () => {
+        const course = courseInput.value.trim();
+        if (!course) return;
 
-      document.addEventListener("DOMContentLoaded", () => {
-
-          const courseInput = document.getElementById("course");
-          const instructorSelect = document.getElementById("instructor_id");
-
-          courseInput.addEventListener("input", () => {
-              const course = courseInput.value.trim();
-              if (!course) return;
-
-              fetch(`/admin/subjects/instructors-by-course?course=${course}`)
-                  .then(res => res.json())
-                  .then(data => {
-                      instructorSelect.innerHTML = "";
-                      data.forEach(inst => {
-                          const option = document.createElement("option");
-                          option.value = inst.instructor_id;
-                          option.textContent = inst.name;
-                          instructorSelect.appendChild(option);
-                      });
-                  });
+        fetch(`/admin/subjects/instructors-by-course?course=${course}`)
+          .then(res => res.json())
+          .then(data => {
+            instructorSelect.innerHTML = '<option value="">-- Select Instructor --</option>';
+            data.forEach(inst => {
+              const option = document.createElement("option");
+              option.value = inst.instructor_id;
+              option.textContent = inst.name;
+              instructorSelect.appendChild(option);
+            });
           });
       });
+    });
 
+    /* =============================
+    AUTO-FILL UNITS / YEAR / SECTION
+    ============================= */
+    const subjectsData = {{ subjects|tojson|safe }};
+    const codeInput2 = document.getElementById('code');
 
-      /* =============================
-          AUTO-FILL UNITS / YEAR / SECTION
-         ============================= */
+    codeInput2.addEventListener('change', function() {
+    const code = this.value;
+    const match = subjectsData.find(s => s.code === code);
 
-      const subjectsData = {{ subjects|tojson }};
-      const codeInput2 = document.getElementById('code');
+    if (match) {
+        document.getElementById('units').value = match.units || '';
+        document.getElementById('year_level').value = match.year_level || '';
+        document.getElementById('section').value = match.section || '';
+    } else {
+        document.getElementById('units').value = '';
+        document.getElementById('year_level').value = '';
+        document.getElementById('section').value = '';
+    }
+    });
 
-      codeInput2.addEventListener('change', function() {
-          const code = this.value;
-          const match = subjectsData.find(s => s.code === code);
-          if (match) {
-              document.getElementById('units').value = match.units || '';
-              document.getElementById('year_level').value = match.year_level || '';
-              document.getElementById('section').value = match.section || '';
-          } else {
-              document.getElementById('units').value = '';
-              document.getElementById('year_level').value = '';
-              document.getElementById('section').value = '';
-          }
-      });
   </script>
 
 </body>

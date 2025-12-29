@@ -1,195 +1,256 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Edit Subject</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_subject.css') }}">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edit Subject</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/edit_subject.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
+    />
 </head>
+
 <body>
-  <!-- Topbar -->
-  <div class="topbar">
-      <h1>College of Computing and Information Sciences</h1>
-      <div class="topbar-profile">
-          {% if instructor_image %}
-          <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
-              alt="Profile Image"
-              class="profile-pic" />
-          {% else %}
-          <i class="fas fa-user-circle profile-icon"></i>
-          {% endif %}
+    <!-- Topbar -->
+    <div class="topbar">
+        <h1>College of Computing and Information Sciences</h1>
 
-          <a href="#" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
-              <i class="fas fa-sign-out-alt"></i> Logout
-          </a>
-      </div>
-  </div>
+        <div class="topbar-profile">
+            {% if instructor_image %}
+                <img
+                    src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
+                    alt="Instructor profile"
+                    class="profile-pic"
+                />
+            {% else %}
+                <i class="fas fa-user-circle profile-icon"></i>
+            {% endif %}
 
-  <!-- Sidebar -->
-  <div class="sidebar">
-      <div class="sidebar-user">
-          <img src="{{ url_for('static', filename='images/brand.png') }}" 
-          alt="CCISS Logo" 
-          class="sidebar-logo">
-          {% if instructor_name %}
-              <p><strong>{{ instructor_name }}</strong></p>
-          {% else %}
-              <p><em>Instructor name not found</em></p>
-          {% endif %}
-      </div>
-          <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-          <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-          <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-          <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-          <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
-          <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-          <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-          <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-          <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>     
-  </div>
+            <button
+                type="button"
+                class="logout-btn"
+                title="Logout"
+                onclick="openLogoutModal(event)"
+            >
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </div>
 
-  <!-- Main Content -->
-  <div class="main-content">
-      <div class="main-form">
-          <form method="POST">
-              <h2 class="form-title">Edit Assigned Subjects Here</h2>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-user">
+            <img
+                src="{{ url_for('static', filename='images/brand.png') }}"
+                alt="CCISS logo"
+                class="sidebar-logo"
+            />
 
-              <!-- Subject Code -->
-              <label for="code">Course Code:</label>
-              <input list="code-list" name="code" id="code" value="{{ subject.code }}" required>
-              <datalist id="code-list">
-                  {% for c in courses %}
-                      <option value="{{ c.course_code }}">
-                  {% endfor %}
-              </datalist>
+            {% if instructor_name %}
+                <p><strong>{{ instructor_name }}</strong></p>
+            {% else %}
+                <p><em>Instructor name not found</em></p>
+            {% endif %}
+        </div>
 
-              <!-- Subject Name -->
-              <label for="name">Course Name:</label>
-              <input list="name-list" name="name" id="name" value="{{ subject.name }}" required>
-              <datalist id="name-list">
-                  {% for c in courses %}
-                      <option value="{{ c.course_name }}">
-                  {% endfor %}
-              </datalist>
+        <a href="{{ url_for('dashboard.admin_dashboard') }}">
+            <i class="fas fa-tachometer-alt"></i> Dashboard
+        </a>
+        <a href="{{ url_for('admin.profile') }}">
+            <i class="fas fa-user"></i> Profile
+        </a>
+        <a href="{{ url_for('instructors.list_instructors') }}">
+            <i class="fas fa-chalkboard-teacher"></i> Instructors
+        </a>
+        <a href="{{ url_for('courses.list_courses') }}">
+            <i class="fas fa-book"></i> Courses
+        </a>
+        <a href="{{ url_for('rooms.list_rooms') }}">
+            <i class="fas fa-door-open"></i> Rooms
+        </a>
+        <a href="{{ url_for('subjects.list_subjects') }}">
+            <i class="fas fa-book"></i> CCISS Loader
+        </a>
+        <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}">
+            <i class="fas fa-cogs"></i> Auto-Scheduler
+        </a>
+        <a href="{{ url_for('schedules.list_schedules') }}">
+            <i class="fas fa-calendar-alt"></i> Schedules
+        </a>
+        <a href="{{ url_for('conflicts.list_conflicts') }}">
+            <i class="fas fa-exclamation-triangle"></i> Conflicts
+        </a>
+    </div>
 
-              <!-- Units -->
-              <label for="units">Units:</label>
-              <input list="units-list" type="number" name="units" id="units" value="{{ subject.units }}" required>
-              <datalist id="units-list">
-                  {% for unit in units_list %}
-                      <option value="{{ unit }}">
-                  {% endfor %}
-              </datalist>
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="main-form">
+            <form method="POST">
+                <h2 class="form-title">Edit Assigned Subjects Here</h2>
 
-              <!-- Year Level -->
-              <label for="year_level">Year Level:</label>
-              <input list="yearlevel-list" type="text" name="year_level" id="year_level" value="{{ subject.year_level }}">
-              <datalist id="yearlevel-list">
-                  {% for level in year_levels_list %}
-                      <option value="{{ level }}">
-                  {% endfor %}
-              </datalist>
+                <!-- Course Code -->
+                <label for="code">Course Code:</label>
+                <input list="code-list" name="code" id="code" value="{{ subject.code }}" required>
+                <datalist id="code-list">
+                    {% for c in courses %}
+                        <option value="{{ c.course_code }}"></option>
+                    {% endfor %}
+                </datalist>
 
-              <!-- Section -->
-              <label for="section">Section:</label>
-              <input list="section-list" type="text" name="section" id="section" value="{{ subject.section }}">
-              <datalist id="section-list">
-                  {% for section in sections_list %}
-                      <option value="{{ section }}">
-                  {% endfor %}
-              </datalist>
+                <!-- Course Name -->
+                <label for="name">Course Name:</label>
+                <input list="name-list" name="name" id="name" value="{{ subject.name }}" required>
+                <datalist id="name-list">
+                    {% for c in courses %}
+                        <option value="{{ c.course_name }}"></option>
+                    {% endfor %}
+                </datalist>
 
-              <!-- Program -->
-              <label for="course">Program:</label>
-              <input list="course-list" name="course" id="course">
-              <datalist id="course-list">
-                  {% for p in programs %}
-                      <option value="{{ p.program }}">
-                  {% endfor %}
-              </datalist>
+                <!-- Units -->
+                <label for="units">Units:</label>
+                <input list="units-list" type="number" name="units" id="units" value="{{ subject.units }}" required>
+                <datalist id="units-list">
+                    {% for unit in units_list %}
+                        <option value="{{ unit }}"></option>
+                    {% endfor %}
+                </datalist>
 
-              <!-- Instructor -->
-              <label for="instructor_id">Instructor:</label>
-              <select name="instructor_id" id="instructor_id">
-                  <option value="">-- Select Instructor --</option>
-                  {% for instructor in instructors %}
-                  <option value="{{ instructor.instructor_id }}" 
-                      {% if subject.instructor_id == instructor.instructor_id %}selected{% endif %}>
-                      {{ instructor.name }}
-                  </option>
-                  {% endfor %}
-              </select>
+                <!-- Year Level -->
+                <label for="year_level">Year Level:</label>
+                <input list="yearlevel-list" type="text" name="year_level" id="year_level" value="{{ subject.year_level }}">
+                <datalist id="yearlevel-list">
+                    {% for level in year_levels_list %}
+                        <option value="{{ level }}"></option>
+                    {% endfor %}
+                </datalist>
 
-              <button type="submit" class="btn">Update</button>
-              <a href="{{ url_for('subjects.list_subjects') }}" class="btn btn-secondary">Cancel</a>
-          </form>
-      </div>
-  </div>
+                <!-- Section -->
+                <label for="section">Section:</label>
+                <input list="section-list" type="text" name="section" id="section" value="{{ subject.section }}">
+                <datalist id="section-list">
+                    {% for section in sections_list %}
+                        <option value="{{ section }}"></option>
+                    {% endfor %}
+                </datalist>
 
-  <!-- Logout Confirmation Modal -->
-  <div id="logoutModal" class="modal">
-      <div class="modal-content">
-          <span class="close" onclick="closeLogoutModal()">&times;</span>
-          <h3>Confirm Logout</h3>
-          <p>Are you sure you want to logout?</p>
-          <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
-              <button type="submit" class="btn btn-danger">Logout</button>
-              <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-          </form>
-      </div>
-  </div>
+                <!-- Program -->
+                <label for="course">Program:</label>
+                <input list="course-list" name="course" id="course">
+                <datalist id="course-list">
+                    {% for p in programs %}
+                        <option value="{{ p.program }}"></option>
+                    {% endfor %}
+                </datalist>
 
-  <script>
-      function openLogoutModal(event) {
-          event.preventDefault();
-          document.getElementById('logoutModal').style.display = 'block';
-      }
-      function closeLogoutModal() {
-          document.getElementById('logoutModal').style.display = 'none';
-      }
-      window.onclick = function(event) {
-          const logoutModal = document.getElementById('logoutModal');
-          if (event.target === logoutModal) logoutModal.style.display = "none";
-      };
+                <!-- Instructor -->
+                <label for="instructor_id">Instructor:</label>
+                <select name="instructor_id" id="instructor_id">
+                    <option value="">-- Select Instructor --</option>
+                    {% for instructor in instructors %}
+                        <option
+                            value="{{ instructor.instructor_id }}"
+                            {% if subject.instructor_id == instructor.instructor_id %}selected{% endif %}
+                        >
+                            {{ instructor.name }}
+                        </option>
+                    {% endfor %}
+                </select>
 
-      // Auto-fill name and program based on code
-      const codeInput = document.getElementById("code");
-      const nameInput = document.getElementById("name");
-      const programInput = document.getElementById("course");
-      const instructorSelect = document.getElementById("instructor_id");
+                <button type="submit" class="btn">Update</button>
+                <a href="{{ url_for('subjects.list_subjects') }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
 
-      const coursesData = {{ courses|tojson }};
-      const instructorsData = {{ instructors|tojson }};
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal">
+        <div class="modal-content">
+            <button
+                type="button"
+                class="close"
+                onclick="closeLogoutModal()"
+                aria-label="Close logout modal"
+            >
+                &times;
+            </button>
 
-      function filterInstructors(program) {
-          instructorSelect.innerHTML = '<option value="">-- Select Instructor --</option>';
-          instructorsData.forEach(inst => {
-              if (inst.program === program) {
-                  const option = document.createElement("option");
-                  option.value = inst.instructor_id;
-                  option.textContent = inst.name;
-                  instructorSelect.appendChild(option);
-              }
-          });
-      }
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout?</p>
 
-      codeInput.addEventListener("input", () => {
-          const code = codeInput.value.trim();
-          const match = coursesData.find(c => c.course_code === code);
-          if (match) {
-              nameInput.value = match.course_name;
-              programInput.value = match.program;
-              filterInstructors(match.program);
-          }
-      });
+            <form method="GET" action="{{ url_for('logout') }}">
+                <button type="submit" class="btn btn-danger">Logout</button>
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onclick="closeLogoutModal()"
+                >
+                    Cancel
+                </button>
+            </form>
+        </div>
+    </div>
 
-      // Filter instructors when program changes manually
-      programInput.addEventListener("input", () => {
-          const program = programInput.value.trim();
-          if (program) filterInstructors(program);
-      });
-  </script>
+    <script>
+        function openLogoutModal(event) {
+            event.preventDefault();
+            document.getElementById("logoutModal").style.display = "block";
+        }
+
+        function closeLogoutModal() {
+            document.getElementById("logoutModal").style.display = "none";
+        }
+
+        window.onclick = function (event) {
+            const logoutModal = document.getElementById("logoutModal");
+            if (event.target === logoutModal) {
+                logoutModal.style.display = "none";
+            }
+        };
+
+        const codeInput = document.getElementById("code");
+        const nameInput = document.getElementById("name");
+        const programInput = document.getElementById("course");
+        const instructorSelect = document.getElementById("instructor_id");
+
+        const coursesData = {{ courses | tojson }};
+        const instructorsData = {{ instructors | tojson }};
+
+        function filterInstructors(program) {
+            instructorSelect.innerHTML =
+                '<option value="">-- Select Instructor --</option>';
+
+            instructorsData.forEach((inst) => {
+                if (inst.program === program) {
+                    const option = document.createElement("option");
+                    option.value = inst.instructor_id;
+                    option.textContent = inst.name;
+                    instructorSelect.appendChild(option);
+                }
+            });
+        }
+
+        codeInput.addEventListener("input", () => {
+            const code = codeInput.value.trim();
+            const match = coursesData.find(
+                (course) => course.course_code === code
+            );
+
+            if (match) {
+                nameInput.value = match.course_name;
+                programInput.value = match.program;
+                filterInstructors(match.program);
+            }
+        });
+
+        programInput.addEventListener("input", () => {
+            const program = programInput.value.trim();
+            if (program) {
+                filterInstructors(program);
+            }
+        });
+    </script>
 </body>
 </html>

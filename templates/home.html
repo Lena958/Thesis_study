@@ -15,31 +15,36 @@
 <body>
 
     <!-- Header -->
-    <div class="header-content">
+    <header class="header-content">
         <div class="logo-group">
             <div class="logo-text-group">
-                <img src="{{ url_for('static', filename='images/ua logo.png') }}" alt="UA Logo" class="logo">
+                <img src="{{ url_for('static', filename='images/ua logo.png') }}" alt="University of Antique Logo" class="logo">
                 <span class="logo-text">University of Antique</span>
             </div>
 
             <div class="logo-text-group">
-                <img src="{{ url_for('static', filename='images/ccs logo.png') }}" alt="CCS Logo" class="logo">
+                <img src="{{ url_for('static', filename='images/ccs logo.png') }}" alt="CCIS Logo" class="logo">
                 <span class="logo-text">College of Computing and Information Sciences</span>
             </div>
         </div>
 
         <div class="header-login">
-            <a href="{{ url_for('login') }}" class="login-button">Login</a>
+            <!-- Proper button for accessibility -->
+            <form action="{{ url_for('login') }}" method="get" style="display:inline;">
+                <button type="submit" class="login-button">
+                    Login
+                </button>
+            </form>
         </div>
-    </div>
+    </header>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-box">
-            <div class="footer-item"><i class="fab fa-facebook"></i> CCIS UA Main</div>
-            <div class="footer-item"><i class="fas fa-envelope"></i> ccis@antiquespride.edu.ph</div>
-            <div class="footer-item"><i class="fas fa-phone"></i> (+63) 912 3456 789</div>
-            <div class="footer-item"><i class="fas fa-map-marker-alt"></i>Mayor Santiago Lotilla St., District I, Sibalom, Antique</div>
+            <div class="footer-item"><i class="fab fa-facebook" aria-hidden="true"></i> CCIS UA Main</div>
+            <div class="footer-item"><i class="fas fa-envelope" aria-hidden="true"></i> <a href="mailto:ccis@antiquespride.edu.ph">ccis@antiquespride.edu.ph</a></div>
+            <div class="footer-item"><i class="fas fa-phone" aria-hidden="true"></i> <a href="tel:+639123456789">(+63) 912 3456 789</a></div>
+            <div class="footer-item"><i class="fas fa-map-marker-alt" aria-hidden="true"></i> Mayor Santiago Lotilla St., District I, Sibalom, Antique</div>
         </div>
     </footer>
 

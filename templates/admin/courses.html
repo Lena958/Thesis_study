@@ -7,74 +7,105 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/courses.css') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
+    <style>
+        /* Basic Modal Styles */
+        dialog {
+            border: none;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            max-width: 400px;
+            width: 90%;
+        }
+        dialog::backdrop {
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(2px);
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .btn-modal {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+        }
+        .btn-yes { background-color: #dc2626; color: #fff; }
+        .btn-yes:hover { background-color: #b91c1c; }
+        .btn-cancel { background-color: #e5e7eb; color: #111827; }
+        .btn-cancel:hover { background-color: #d1d5db; }
+    </style>
 </head>
 <body>
     <!-- Topbar -->
-    <div class="topbar">
-        <h1>College of Computing and Information Sciences</h1>
-        <div class="topbar-profile">
+    <div class="topbar flex justify-between items-center p-4 bg-white shadow-md">
+        <h1 class="text-lg font-semibold">College of Computing and Information Sciences</h1>
+        <div class="flex items-center gap-4">
             {% if instructor_image %}
-                <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}" alt="Profile Image" class="profile-pic" />
+                <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}" alt="Profile" class="w-10 h-10 rounded-full object-cover">
             {% else %}
-                <i class="fas fa-user-circle profile-icon"></i>
+                <i class="fas fa-user-circle text-3xl text-gray-500" aria-label="Default profile"></i>
             {% endif %}
-            <a href="#" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
-                <i class="fas fa-sign-out-alt"></i> Logout
-            </a>
+            <button id="logoutBtn" class="text-gray-700 hover:text-red-500 flex items-center gap-1">
+                <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
+            </button>
         </div>
     </div>
 
     <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-user">
-            <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="sidebar-logo">
+    <div class="sidebar fixed left-0 top-0 h-full w-60 bg-white shadow-lg pt-6">
+        <div class="flex flex-col items-center mb-6">
+            <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="w-20 h-20 mb-2">
             {% if instructor_name %}
-                <p><strong>{{ instructor_name }}</strong></p>
+                <p class="font-semibold">{{ instructor_name }}</p>
             {% else %}
-                <p><em>Instructor name not found</em></p>
+                <p class="italic text-gray-400">Instructor name not found</p>
             {% endif %}
         </div>
-        <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-        <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-        <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-        <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-        <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
-        <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-        <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-        <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-        <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
+        <nav class="flex flex-col gap-2 px-4" role="navigation" aria-label="Sidebar navigation">
+            <button class="sidebar-link" onclick="location.href='{{ url_for('dashboard.admin_dashboard') }}'"><i class="fas fa-tachometer-alt"></i> Dashboard</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('admin.profile') }}'"><i class="fas fa-user"></i> Profile</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('instructors.list_instructors') }}'"><i class="fas fa-chalkboard-teacher"></i> Instructors</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('courses.list_courses') }}'"><i class="fas fa-book"></i> Courses</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('rooms.list_rooms') }}'"><i class="fas fa-door-open"></i> Rooms</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('subjects.list_subjects') }}'"><i class="fas fa-book"></i> CCISS Loader</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('auto_scheduler.auto_scheduler_home') }}'"><i class="fas fa-cogs"></i> Auto-Scheduler</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('schedules.list_schedules') }}'"><i class="fas fa-calendar-alt"></i> Schedules</button>
+            <button class="sidebar-link" onclick="location.href='{{ url_for('conflicts.list_conflicts') }}'"><i class="fas fa-exclamation-triangle"></i> Conflicts</button>
+        </nav>
     </div>
 
-    <!-- Logout Modal -->
-    <div id="logoutModal" class="modal">
+    <!-- Logout Dialog -->
+    <dialog id="logoutModal" aria-labelledby="logoutTitle" aria-describedby="logoutDesc">
         <div class="modal-content">
-            <span class="close" onclick="closeLogoutModal()">&times;</span>
-            <h3>Confirm Logout</h3>
-            <p>Are you sure you want to logout?</p>
-            <form id="logoutForm" method="GET" action="{{ url_for('logout') }}">
-                <button type="submit" class="btn btn-danger">Logout</button>
-                <button type="button" class="btn btn-secondary" onclick="closeLogoutModal()">Cancel</button>
-            </form>
+            <h3 id="logoutTitle">Confirm Logout</h3>
+            <p id="logoutDesc">Are you sure you want to logout?</p>
+            <div class="modal-buttons">
+                <button id="logoutConfirm" class="btn-modal btn-yes">Logout</button>
+                <button id="logoutCancel" class="btn-modal btn-cancel">Cancel</button>
+            </div>
         </div>
-    </div>
+    </dialog>
 
-    <!-- Delete Modal -->
-    <div id="deleteModal" class="modal">
+    <!-- Delete Dialog -->
+    <dialog id="deleteModal" aria-labelledby="deleteTitle" aria-describedby="deleteDesc">
         <div class="modal-content">
-            <span class="close" onclick="closeDeleteModal()">&times;</span>
-            <h3>Confirm Delete</h3>
-            <p id="deleteMessage">Are you sure you want to delete this course?</p>
-            <form id="deleteForm" method="POST" action="">
-                <button type="submit" class="btn btn-danger">Delete</button>
-                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-            </form>
+            <h3 id="deleteTitle">Confirm Delete</h3>
+            <p id="deleteDesc">Are you sure you want to delete this course?</p>
+            <div class="modal-buttons">
+                <button id="deleteConfirm" class="btn-modal btn-yes">Delete</button>
+                <button id="deleteCancel" class="btn-modal btn-cancel">Cancel</button>
+            </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- Main Content -->
-    <main class="main-content">
-        <!-- Welcome Card -->
-        <div class="welcome-card">
+    <main class="ml-60 p-6">
+        <div class="welcome-card bg-white p-6 rounded-xl shadow mb-6">
             <h2>Admin, {{ instructor_name or 'Instructor' }}!</h2>
             <p>Manage courses here.</p>
         </div>
@@ -82,7 +113,7 @@
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
-            <div class="flash-container">
+            <div class="flash-container mb-4">
               {% for category, message in messages %}
                 {% if category == 'courses_success' or category == 'danger' %}
                   <div class="alert alert-{{ 'success' if category == 'courses_success' else 'danger' }}">
@@ -95,51 +126,47 @@
         {% endwith %}
 
         <!-- Filter Container -->
-        <div class="filter-container">
-            <form method="POST" class="filter-form">
+        <div class="filter-container mb-4">
+            <form method="POST" class="filter-form grid grid-cols-1 sm:grid-cols-5 gap-4">
                 <div class="form-group">
-                    <label>Program:</label>
-                    <select name="program">
+                    <label for="program">Program:</label>
+                    <select name="program" id="program">
                         <option value="">All Programs</option>
                         {% for program in programs %}
                             <option value="{{ program }}" {% if selected_program == program %}selected{% endif %}>{{ program }}</option>
                         {% endfor %}
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label>School Year:</label>
-                    <select name="school_year">
+                    <label for="school_year">School Year:</label>
+                    <select name="school_year" id="school_year">
                         <option value="">All Years</option>
                         {% for year in school_years %}
                             <option value="{{ year }}" {% if selected_school_year == year %}selected{% endif %}>{{ year }}</option>
                         {% endfor %}
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label>Semester:</label>
-                    <select name="semester">
+                    <label for="semester">Semester:</label>
+                    <select name="semester" id="semester">
                         <option value="">All Semesters</option>
                         <option value="First Semester" {% if selected_semester == "First Semester" %}selected{% endif %}>First Semester</option>
                         <option value="Second Semester" {% if selected_semester == "Second Semester" %}selected{% endif %}>Second Semester</option>
                         <option value="Summer" {% if selected_semester == "Summer" %}selected{% endif %}>Summer</option>
                     </select>
                 </div>
-
                 <div class="form-group">
-                    <label>Course Type:</label>
-                    <select name="course_type">
+                    <label for="course_type">Course Type:</label>
+                    <select name="course_type" id="course_type">
                         <option value="">All Types</option>
                         <option value="Major" {% if selected_course_type == "Major" %}selected{% endif %}>Major</option>
                         <option value="GEC" {% if selected_course_type == "GEC" %}selected{% endif %}>GEC</option>
                         <option value="GEE" {% if selected_course_type == "GEE" %}selected{% endif %}>GEE</option>
                     </select>
                 </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn">Filter</button>
-                    <a href="{{ url_for('courses.add_course') }}" class="btn btn-primary">Add New Course</a>
+                <div class="form-actions flex items-end gap-2">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <button type="button" class="btn btn-secondary" onclick="location.href='{{ url_for('courses.add_course') }}'">Add New Course</button>
                 </div>
             </form>
         </div>
@@ -147,8 +174,8 @@
         <!-- Courses Table -->
         <div class="table-container">
             {% if courses is defined and courses %}
-            <table class="courses-table">
-                <thead>
+            <table class="courses-table w-full border-collapse">
+                <thead class="bg-gray-100">
                     <tr>
                         <th>Course Code</th>
                         <th>Course Name</th>
@@ -162,56 +189,54 @@
                             <td>{{ course.course_code }}</td>
                             <td>{{ course.course_name }}</td>
                             <td>{{ course.course_type }}</td>
-                            <td>
-                                <a href="{{ url_for('courses.edit_course', course_id=course.course_id) }}" class="btn btn-secondary btn-sm">Edit</a>
-                                <button type="button" class="btn btn-danger btn-sm" 
-                                        onclick="openDeleteModal({{ course.course_id }}, '{{ course.course_name }}')">
-                                    Delete
-                                </button>
+                            <td class="flex gap-2">
+                                <button class="btn btn-secondary btn-sm" onclick="location.href='{{ url_for('courses.edit_course', course_id=course.course_id) }}'">Edit</button>
+                                <button class="btn btn-danger btn-sm" onclick="openDeleteDialog({{ course.course_id }}, '{{ course.course_name }}')">Delete</button>
                             </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
             {% else %}
-                <p style="text-align:center; margin-top:20px;">No courses to display. Use the filter above to search for courses.</p>
+                <p class="text-center mt-4">No courses to display. Use the filter above to search for courses.</p>
             {% endif %}
         </div>
     </main>
 
     <script>
-        // Logout modal
-        function openLogoutModal(event) {
-            event.preventDefault();
-            document.getElementById('logoutModal').style.display = 'block';
-        }
+        const logoutModal = document.getElementById('logoutModal');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const logoutConfirm = document.getElementById('logoutConfirm');
+        const logoutCancel = document.getElementById('logoutCancel');
 
-        function closeLogoutModal() {
-            document.getElementById('logoutModal').style.display = 'none';
-        }
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteDesc = document.getElementById('deleteDesc');
+        const deleteConfirm = document.getElementById('deleteConfirm');
+        const deleteCancel = document.getElementById('deleteCancel');
 
-        // Delete modal
-        function openDeleteModal(courseId, courseName) {
-            document.getElementById('deleteModal').style.display = 'block';
-            document.getElementById('deleteMessage').innerText = `Are you sure you want to delete the course "${courseName}"?`;
-            document.getElementById('deleteForm').action = `/admin/courses/delete/${courseId}`;
-        }
+        let deleteActionUrl = '';
 
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
-        }
+        // Logout
+        logoutBtn.addEventListener('click', () => logoutModal.showModal());
+        logoutCancel.addEventListener('click', () => logoutModal.close());
+        logoutConfirm.addEventListener('click', () => location.href='{{ url_for("logout") }}');
 
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const logoutModal = document.getElementById('logoutModal');
-            const deleteModal = document.getElementById('deleteModal');
-            if (event.target === logoutModal) {
-                logoutModal.style.display = 'none';
+        // Delete
+        function openDeleteDialog(courseId, courseName) {
+            deleteActionUrl = `/admin/courses/delete/${courseId}`;
+            deleteDesc.innerText = `Are you sure you want to delete the course "${courseName}"?`;
+            deleteModal.showModal();
+        }
+        deleteCancel.addEventListener('click', () => deleteModal.close());
+        deleteConfirm.addEventListener('click', () => location.href = deleteActionUrl);
+
+        // Escape key to close modals
+        globalThis.addEventListener('keydown', function(event) {
+            if(event.key === 'Escape') {
+                logoutModal.close();
+                deleteModal.close();
             }
-            if (event.target === deleteModal) {
-                deleteModal.style.display = 'none';
-            }
-        };
+        });
     </script>
 </body>
 </html>
