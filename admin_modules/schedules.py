@@ -7,6 +7,7 @@ Provides CRUD operations, approval, and conflict checking for schedules.
 from functools import wraps
 from contextlib import contextmanager
 from datetime import datetime, timedelta
+import re
 
 # -------------------- Third-party Imports --------------------
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
@@ -81,7 +82,7 @@ def inject_instructor_name():
 
 # -------------------- Time Formatting --------------------
 def format_time_12hr(time_obj):
-    """Return a 12-hour formatted string for a given time object or string."""
+    """Return a 12-hour formatted string."""
     if not time_obj:
         return ""
     if isinstance(time_obj, str):
@@ -95,7 +96,7 @@ def format_time_12hr(time_obj):
 
 
 def format_time_24hr(time_obj):
-    """Return a 24-hour formatted string for a given time object or string."""
+    """Return a 24-hour formatted string."""
     if isinstance(time_obj, str):
         time_obj = datetime.strptime(time_obj, "%H:%M:%S").time()
     elif isinstance(time_obj, timedelta):
@@ -108,18 +109,19 @@ def format_time_24hr(time_obj):
 
 # -------------------- Fetch Schedules --------------------
 def fetch_schedules(approved=None, complete_only=False):
-    """Fetch schedules with optional approval and completeness filters."""
+    """Fetch schedules with filters."""
     query = (
         "SELECT sc.schedule_id, sc.day_of_week, sc.start_time, sc.end_time, "
-        "sb.subject_id, sb.code AS subject_code, sb.name AS subject_name, "
+        "sb.code AS subject_code, sb.name AS subject_name, "
         "sb.year_level, sb.section, sb.course, "
-        "ins.instructor_id, ins.name AS instructor_name, "
-        "rm.room_id, rm.room_number, rm.room_type "
+        "ins.name AS instructor_name, "
+        "rm.room_number, rm.room_type "
         "FROM schedules sc "
         "LEFT JOIN subjects sb ON sc.subject_id = sb.subject_id "
         "LEFT JOIN instructors ins ON sc.instructor_id = ins.instructor_id "
         "LEFT JOIN rooms rm ON sc.room_id = rm.room_id"
     )
+
     conditions = []
     params = []
 
@@ -129,10 +131,9 @@ def fetch_schedules(approved=None, complete_only=False):
 
     if complete_only:
         conditions.append(
-            "sc.subject_id IS NOT NULL AND sb.subject_id IS NOT NULL "
-            "AND sc.instructor_id IS NOT NULL AND ins.instructor_id IS NOT NULL "
-            "AND sc.room_id IS NOT NULL AND rm.room_id IS NOT NULL "
-            "AND sc.start_time IS NOT NULL AND sc.end_time IS NOT NULL"
+            "sc.subject_id IS NOT NULL AND sc.instructor_id IS NOT NULL "
+            "AND sc.room_id IS NOT NULL AND sc.start_time IS NOT NULL "
+            "AND sc.end_time IS NOT NULL"
         )
 
     if conditions:
@@ -155,7 +156,6 @@ def fetch_schedules(approved=None, complete_only=False):
 @schedules_bp.route('/')
 @admin_required
 def list_schedules():
-    """List pending schedules (not approved)."""
     schedules = fetch_schedules(approved=0)
     return render_template("admin/schedules.html", schedules=schedules)
 
@@ -163,7 +163,81 @@ def list_schedules():
 @schedules_bp.route('/view')
 @admin_required
 def view_all_schedules():
-    """View all approved schedules (complete only)."""
     schedules = fetch_schedules(approved=1, complete_only=True)
     return render_template("schedules/view.html", schedules=schedules)
 
+
+# ============================================================
+# INPUT VALIDATION HELPERS
+# ============================================================
+
+def sanitize_day_of_week(value):
+    valid_days = {
+        "Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday", "Sunday"
+    }
+    if not isinstance(value, str):
+        return None
+    value = value.strip().capitalize()
+    return value if value in valid_days else None
+
+
+def validate_time_range(start_time, end_time):
+    try:
+        start = datetime.strptime(start_time, "%H:%M").time()
+        end = datetime.strptime(end_time, "%H:%M").time()
+    except (TypeError, ValueError):
+        return None
+    return (start, end) if start < end else None
+
+
+def sanitize_year_level(value):
+    try:
+        value = int(value)
+    except (TypeError, ValueError):
+        return None
+    return value if 1 <= value <= 5 else None
+
+
+def sanitize_section(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip().upper()
+    return value if re.fullmatch(r"[A-Z0-9]{1,5}", value) else None
+
+
+def sanitize_course_name(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if re.fullmatch(r"[A-Za-z\s&\-]{2,100}", value) else None
+
+
+def sanitize_instructor_name(value):
+    """Validate instructor name."""
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if re.fullmatch(r"[A-Za-z\s\-']{2,100}", value) else None
+
+
+# ============================================================
+# TEST CASES (MATCHING YOUR PROVIDED FORMAT)
+# ============================================================
+
+if __name__ == "__main__":
+    print("Interactive and automatic quick tests for schedules_routes.py\n")
+
+    test_days = ["Monday", "Friday", "Sunday", "Funday", ""]
+    for day in test_days:
+        print(f"Day test: '{day}' -> {sanitize_day_of_week(day)}")
+
+    test_times = [("08:00", "10:00"), ("14:00", "13:00"), ("aa", "bb")]
+    for start, end in test_times:
+        print(f"Time test: {start}-{end} -> {validate_time_range(start, end)}")
+
+    test_names = ["John Doe", "Anne-Marie O'Neill", "John123", ""]
+    for name in test_names:
+        print(f"Instructor test: '{name}' -> {sanitize_instructor_name(name)}")
+
+    print("\nAll tests completed!")

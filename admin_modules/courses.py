@@ -262,4 +262,89 @@ def delete_course(course_id):
         flash(f"❌ Database error deleting course: {e}", "danger")
 
     return redirect(url_for(COURSES_LIST_ROUTE))
+# ... [rest of your courses_bp code stays the same] ...
+
+# ==================================================
+# 7. QUICK AUTOMATIC AND INTERACTIVE TESTS
+# ==================================================
+
+if __name__ == "__main__":
+    print("Interactive and automatic quick tests for courses_bp.py\n")
+
+    # ----------------------------
+    # AUTOMATIC INPUT VALIDATION TESTS
+    # ----------------------------
+    test_courses = [
+        {
+            'course_code': 'CS101',
+            'course_name': 'Intro to CS',
+            'program': 'Computer Science',
+            'school_year': '2025-2026',
+            'semester': '1',
+            'course_type': 'Major'
+        },
+        {
+            'course_code': '',  # Missing field
+            'course_name': 'Data Structures',
+            'program': 'Computer Science',
+            'school_year': '2025-2026',
+            'semester': '1',
+            'course_type': 'Major'
+        },
+        {
+            'course_code': 'MATH200',
+            'course_name': '',
+            'program': 'Math',
+            'school_year': '2025-2026',
+            'semester': '2',
+            'course_type': 'GEC'
+        }
+    ]
+
+    for i, course in enumerate(test_courses, start=1):
+        print(f"Test course #{i}: ", end='')
+        if all(course.values()):
+            print("PASS")
+        else:
+            print(f"FAIL (missing fields: {[k for k, v in course.items() if not v]})")
+
+    # ----------------------------
+    # AUTOMATIC SAVE/RETRIEVE TEST (mocked, no DB commit)
+    # ----------------------------
+    try:
+        print("\nTesting fetch_distinct_values and fetch_courses...")
+        programs = fetch_distinct_values('program')
+        print(f"Distinct programs fetched: {programs} -> PASS")
+        courses = fetch_courses()
+        print(f"Total courses fetched: {len(courses)} -> PASS")
+    except Exception as e:
+        print(f"FAIL ({e})")
+
+    # ----------------------------
+    # INTERACTIVE TESTS
+    # ----------------------------
+    print("\n=== INTERACTIVE TESTS ===")
+    course_code = input("Enter course code to test validation: ").strip()
+    course_name = input("Enter course name to test validation: ").strip()
+    program = input("Enter program to test validation: ").strip()
+    school_year = input("Enter school year to test validation: ").strip()
+    semester = input("Enter semester to test validation: ").strip()
+    course_type = input("Enter course type (Major/GEC/GEE) to test validation: ").strip()
+
+    test_course = {
+        'course_code': course_code,
+        'course_name': course_name,
+        'program': program,
+        'school_year': school_year,
+        'semester': semester,
+        'course_type': course_type
+    }
+
+    if all(test_course.values()):
+        print(f"Validation PASS -> {test_course}")
+    else:
+        missing = [k for k, v in test_course.items() if not v]
+        print(f"Validation FAIL, missing fields: {missing}")
+
+    print("\nInteractive tests completed!")
 

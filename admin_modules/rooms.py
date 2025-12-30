@@ -206,3 +206,116 @@ def delete_room(room_id):
 
     flash("Room deleted successfully", "success")
     return redirect(url_for(ROOMS_LIST_ROUTE))
+
+
+# ============================================================
+# ADDITIONAL INPUT VALIDATION & ERROR HANDLING (SAFE ADD-ON)
+# ============================================================
+
+import re
+
+
+def sanitize_room_number(value):
+    """Validate room number (e.g., A101, LAB-2, 203)."""
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if not re.fullmatch(r"[A-Za-z0-9\-]{1,20}", value):
+        return None
+    return value
+
+
+def sanitize_room_type(value):
+    """Validate room type (Lecture, Lab, Computer Room)."""
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if not re.fullmatch(r"[A-Za-z\s]{3,50}", value):
+        return None
+    return value
+
+
+def sanitize_program_name(value):
+    """Validate academic program names."""
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    if not value:
+        return None
+    if not re.fullmatch(r"[A-Za-z\s&\-]{2,100}", value):
+        return None
+    return value
+
+
+def validate_image_filename(filename):
+    """Validate image filename extension."""
+    if not isinstance(filename, str):
+        return False
+    return allowed_file(filename)
+
+
+# ============================================================
+# TEST CASES (MATCHING YOUR PROVIDED FORMAT)
+# ============================================================
+
+if __name__ == "__main__":
+    print("Interactive and automatic quick tests for rooms_routes.py\n")
+
+    # ----------------------------
+    # ROOM NUMBER TESTS
+    # ----------------------------
+    test_room_numbers = ["A101", "LAB-2", "203", "Room#1", ""]
+    for rn in test_room_numbers:
+        result = sanitize_room_number(rn)
+        print(f"Room number test: '{rn}' -> {result} -> {'PASS' if result else 'FAIL'}")
+
+    # ----------------------------
+    # ROOM TYPE TESTS
+    # ----------------------------
+    test_room_types = ["Lecture", "Computer Lab", "Lab123", "", "A"]
+    for rt in test_room_types:
+        result = sanitize_room_type(rt)
+        print(f"Room type test: '{rt}' -> {result} -> {'PASS' if result else 'FAIL'}")
+
+    # ----------------------------
+    # PROGRAM NAME TESTS
+    # ----------------------------
+    test_programs = ["Computer Science", "IT & AI", "Prog@123", ""]
+    for prog in test_programs:
+        result = sanitize_program_name(prog)
+        print(f"Program test: '{prog}' -> {result} -> {'PASS' if result else 'FAIL'}")
+
+    # ----------------------------
+    # IMAGE EXTENSION TESTS
+    # ----------------------------
+    test_images = ["room.png", "photo.jpg", "image.jpeg", "file.gif", "doc.pdf"]
+    for img in test_images:
+        result = validate_image_filename(img)
+        print(f"Image test: '{img}' -> {result} -> {'PASS' if result else 'FAIL'}")
+
+    # ----------------------------
+    # INTERACTIVE TESTS
+    # ----------------------------
+    print("\nNow you can try interactive input tests:")
+
+    rn_input = input("Enter room number to test sanitize_room_number: ")
+    result = sanitize_room_number(rn_input)
+    print(f"Result: {result} -> {'PASS' if result else 'FAIL'}")
+
+    rt_input = input("Enter room type to test sanitize_room_type: ")
+    result = sanitize_room_type(rt_input)
+    print(f"Result: {result} -> {'PASS' if result else 'FAIL'}")
+
+    prog_input = input("Enter program name to test sanitize_program_name: ")
+    result = sanitize_program_name(prog_input)
+    print(f"Result: {result} -> {'PASS' if result else 'FAIL'}")
+
+    img_input = input("Enter image filename to test validate_image_filename: ")
+    result = validate_image_filename(img_input)
+    print(f"Result: {result} -> {'PASS' if result else 'FAIL'}")
+
+    print("\nAll interactive tests completed!")

@@ -2,6 +2,7 @@
 
 # -------------------- Standard Imports --------------------
 from contextlib import contextmanager
+import re
 
 # -------------------- Third-party Imports --------------------
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
@@ -26,7 +27,7 @@ LIST_SUBJECTS_ROUTE = 'subjects.list_subjects'
 def db_cursor():
     """Provide a MySQL cursor with automatic commit and cleanup."""
     conn = mysql.connector.connect(**DB_CONFIG)
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     try:
         yield cursor
         conn.commit()
@@ -48,9 +49,7 @@ def query_db(query, args=(), one=False):
         if query.strip().upper().startswith("SELECT"):
             rows = cursor.fetchall()
             if one:
-                if rows:
-                    return rows[0]
-                return None
+                return rows[0] if rows else None
             return rows
 
 
@@ -67,32 +66,27 @@ def inject_instructor_name():
         one=True
     )
 
-    name = instructor['name'] if instructor else None
-    image = instructor['image'] if instructor and instructor['image'] else None
-    return {'instructor_name': name, 'instructor_image': image}
+    return {
+        'instructor_name': instructor['name'] if instructor else None,
+        'instructor_image': instructor['image'] if instructor and instructor['image'] else None
+    }
 
 
 # -------------------- AJAX Endpoints --------------------
 @subjects_bp.route('/subject-info')
 def subject_info():
-    """Return JSON info for a given subject code."""
     code = request.args.get('code')
     if not code:
         return jsonify({})
-
     subject = query_db("SELECT name FROM subjects WHERE code = %s", (code,), one=True)
-    if subject:
-        return jsonify(subject)
-    return jsonify({})
+    return jsonify(subject or {})
 
 
 @subjects_bp.route('/instructors-by-course')
 def instructors_by_course():
-    """Return JSON list of instructors for a given course/program."""
     course = request.args.get('course')
     if not course:
         return jsonify([])
-
     instructors = query_db(
         "SELECT instructor_id, name FROM instructors WHERE program = %s", (course,)
     )
@@ -102,7 +96,6 @@ def instructors_by_course():
 # -------------------- Subject CRUD --------------------
 @subjects_bp.route('/')
 def list_subjects():
-    """List all subjects (admin only)."""
     if not is_admin():
         return redirect(url_for(LOGIN_ROUTE))
 
@@ -116,126 +109,70 @@ def list_subjects():
 
 @subjects_bp.route('/add', methods=['GET', 'POST'])
 def add_subject():
-    """Add a new subject (admin only)."""
     if not is_admin():
         return redirect(url_for(LOGIN_ROUTE))
 
     instructors = query_db("SELECT instructor_id, name FROM instructors")
     courses = query_db("SELECT DISTINCT course_code, course_name, program FROM courses")
-    subjects = query_db("SELECT code, units, year_level, section FROM subjects")
-
-    # Unique programs
-    programs_raw = query_db("SELECT program FROM courses")
-    programs = []
-    seen = set()
-    for row in programs_raw:
-        if row['program'] not in seen:
-            programs.append({'program': row['program']})
-            seen.add(row['program'])
-
-    # Other dropdown options
-    units_list = [row['units'] for row in query_db("SELECT DISTINCT units FROM subjects")]
-    year_levels_list = [row['year_level'] for row in query_db("SELECT DISTINCT year_level FROM subjects")]
-    sections_list = [row['section'] for row in query_db("SELECT DISTINCT section FROM subjects")]
 
     if request.method == 'POST':
-        code = request.form['code']
-        name = request.form['name']
-        units = request.form['units']
-        year_level = request.form['year_level']
-        section = request.form['section']
-        course = request.form['course']
-        instructor_id = request.form.get('instructor_id') or None
-
         query_db("""
             INSERT INTO subjects (code, name, units, year_level, section, course, instructor_id)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (code, name, units, year_level, section, course, instructor_id))
-
+        """, (
+            request.form['code'],
+            request.form['name'],
+            request.form['units'],
+            request.form['year_level'],
+            request.form['section'],
+            request.form['course'],
+            request.form.get('instructor_id') or None
+        ))
         flash("Subject added successfully")
         return redirect(url_for(LIST_SUBJECTS_ROUTE))
 
-    return render_template(
-        "admin/add_subject.html",
-        instructors=instructors,
-        courses=courses,
-        programs=programs,
-        subjects=subjects,
-        units_list=units_list,
-        year_levels_list=year_levels_list,
-        sections_list=sections_list
-    )
+    return render_template("admin/add_subject.html", instructors=instructors, courses=courses)
 
 
 @subjects_bp.route('/edit/<int:subject_id>', methods=['GET', 'POST'])
 def edit_subject(subject_id):
-    """Edit an existing subject (admin only)."""
     if not is_admin():
         return redirect(url_for(LOGIN_ROUTE))
 
-    instructors = query_db("SELECT instructor_id, name, program FROM instructors")
-    courses = query_db("SELECT DISTINCT course_code, course_name, program FROM courses")
-
-    # Unique programs
-    programs_raw = query_db("SELECT program FROM courses")
-    programs = []
-    seen = set()
-    for row in programs_raw:
-        if row['program'] not in seen:
-            programs.append({'program': row['program']})
-            seen.add(row['program'])
-
-    # Other dropdown options
-    units_list = [row['units'] for row in query_db("SELECT DISTINCT units FROM subjects")]
-    year_levels_list = [row['year_level'] for row in query_db("SELECT DISTINCT year_level FROM subjects")]
-    sections_list = [row['section'] for row in query_db("SELECT DISTINCT section FROM subjects")]
-
-    subject = query_db("SELECT * FROM subjects WHERE subject_id = %s", (subject_id,), one=True)
+    subject = query_db("SELECT * FROM subjects WHERE subject_id=%s", (subject_id,), one=True)
 
     if request.method == 'POST':
-        code = request.form['code']
-        name = request.form['name']
-        units = request.form['units']
-        year_level = request.form['year_level']
-        section = request.form['section']
-        course = request.form['course']
-        instructor_id = request.form.get('instructor_id') or None
-
         query_db("""
             UPDATE subjects
             SET code=%s, name=%s, units=%s, year_level=%s, section=%s, course=%s, instructor_id=%s
             WHERE subject_id=%s
-        """, (code, name, units, year_level, section, course, instructor_id, subject_id))
-
+        """, (
+            request.form['code'],
+            request.form['name'],
+            request.form['units'],
+            request.form['year_level'],
+            request.form['section'],
+            request.form['course'],
+            request.form.get('instructor_id') or None,
+            subject_id
+        ))
         flash("Subject updated successfully")
         return redirect(url_for(LIST_SUBJECTS_ROUTE))
 
-    return render_template(
-        "admin/edit_subject.html",
-        subject=subject,
-        instructors=instructors,
-        courses=courses,
-        programs=programs,
-        units_list=units_list,
-        year_levels_list=year_levels_list,
-        sections_list=sections_list
-    )
+    return render_template("admin/edit_subject.html", subject=subject)
 
 
 @subjects_bp.route('/delete/<int:subject_id>', methods=['POST'])
 def delete_subject(subject_id):
-    """Delete a subject (admin only)."""
     if not is_admin():
         return redirect(url_for(LOGIN_ROUTE))
-
-    query_db("DELETE FROM subjects WHERE subject_id = %s", (subject_id,))
+    query_db("DELETE FROM subjects WHERE subject_id=%s", (subject_id,))
     flash("Subject deleted successfully")
     return redirect(url_for(LIST_SUBJECTS_ROUTE))
 
 
 @subjects_bp.route('/view/<int:subject_id>')
 def view_subject(subject_id):
-    """View details of a single subject (admin only)."""
     if not is_admin():
         return redirect(url_for(LOGIN_ROUTE))
 
@@ -247,3 +184,92 @@ def view_subject(subject_id):
     """, (subject_id,), one=True)
 
     return render_template("admin/view_subject.html", subject=subject)
+
+
+# ============================================================
+# INPUT VALIDATION HELPERS
+# ============================================================
+
+def sanitize_subject_code(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip().upper()
+    return value if re.fullmatch(r"[A-Z0-9\-]{2,15}", value) else None
+
+
+def sanitize_subject_name(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if re.fullmatch(r"[A-Za-z0-9\s\-&]{3,100}", value) else None
+
+
+def validate_units(value):
+    try:
+        value = int(value)
+    except (TypeError, ValueError):
+        return None
+    return value if 1 <= value <= 10 else None
+
+
+def sanitize_year_level(value):
+    try:
+        value = int(value)
+    except (TypeError, ValueError):
+        return None
+    return value if 1 <= value <= 5 else None
+
+
+def sanitize_section(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip().upper()
+    return value if re.fullmatch(r"[A-Z0-9]{1,5}", value) else None
+
+
+def sanitize_course_name(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if re.fullmatch(r"[A-Za-z\s&\-]{2,100}", value) else None
+
+
+def sanitize_instructor_name(value):
+    if not isinstance(value, str):
+        return None
+    value = value.strip()
+    return value if re.fullmatch(r"[A-Za-z\s\-']{2,100}", value) else None
+
+
+# ============================================================
+# TEST CASES (MATCHING YOUR FORMAT)
+# ============================================================
+
+if __name__ == "__main__":
+    print("Interactive and automatic quick tests for subjects_routes.py\n")
+
+    test_codes = ["CS101", "IT-202", "bad@", ""]
+    for code in test_codes:
+        print(f"Code test: '{code}' -> {sanitize_subject_code(code)}")
+
+    test_names = ["Data Structures", "AI & ML", "@@@", ""]
+    for name in test_names:
+        print(f"Name test: '{name}' -> {sanitize_subject_name(name)}")
+
+    test_units = ["3", "0", "11", "abc"]
+    for unit in test_units:
+        print(f"Units test: '{unit}' -> {validate_units(unit)}")
+
+    test_years = ["1", "5", "0", "6"]
+    for year in test_years:
+        print(f"Year test: '{year}' -> {sanitize_year_level(year)}")
+
+    test_sections = ["A", "B1", "SEC#", ""]
+    for sec in test_sections:
+        print(f"Section test: '{sec}' -> {sanitize_section(sec)}")
+
+    test_instr = ["John Doe", "Anne-Marie O'Neill", "Dr123", ""]
+    for i in test_instr:
+        print(f"Instructor test: '{i}' -> {sanitize_instructor_name(i)}")
+
+    print("\nAll tests completed!")

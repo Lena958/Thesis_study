@@ -8,6 +8,7 @@ Module for managing schedules and instructor-related views in iLoad admin.
 from functools import wraps
 from contextlib import contextmanager
 from datetime import datetime, timedelta, time
+import re
 
 # ------------------------
 # Third-party imports
@@ -15,6 +16,7 @@ from datetime import datetime, timedelta, time
 from flask import Blueprint, render_template, request, session, redirect, url_for
 import mysql.connector
 from mysql.connector.cursor import MySQLCursorDict
+from mysql.connector import Error
 
 # ------------------------
 # DB / Blueprint
@@ -26,30 +28,46 @@ DB_CONFIG = {
     'database': 'iload'
 }
 
+
 def get_db_connection():
     """Return a new MySQL database connection using DB_CONFIG."""
-    return mysql.connector.connect(**DB_CONFIG)
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        return conn
+    except Error as e:
+        print(f"Database connection error: {e}")
+        return None
+
 
 def is_admin():
     """Return True if current session belongs to admin."""
     return session.get('role') == 'admin'
 
+
 @contextmanager
 def db_cursor(dictionary=False):
     """Context manager to yield a database cursor and commit/close connection."""
     conn = get_db_connection()
+    if not conn:
+        yield None
+        return
     cursor = conn.cursor(cursor_class=MySQLCursorDict) if dictionary else conn.cursor()
     try:
         yield cursor
         conn.commit()
+    except Error as e:
+        conn.rollback()
+        print(f"Database error: {e}")
     finally:
         cursor.close()
         conn.close()
+
 
 # ------------------------
 # Blueprint
 # ------------------------
 load_bp = Blueprint('load', __name__, url_prefix='/view')
+
 
 # ------------------------
 # Context processors
@@ -61,6 +79,8 @@ def inject_instructor_name():
         return {"instructor_name": None, "instructor_image": None}
 
     with db_cursor(dictionary=True) as cursor:
+        if not cursor:
+            return {"instructor_name": None, "instructor_image": None}
         cursor.execute(
             "SELECT name, image FROM instructors WHERE instructor_id = %s",
             (session['user_id'],)
@@ -71,6 +91,7 @@ def inject_instructor_name():
         "instructor_name": instructor['name'] if instructor else None,
         "instructor_image": instructor['image'] if instructor and instructor['image'] else None
     }
+
 
 # ------------------------
 # Helpers
@@ -84,23 +105,28 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
+
 def format_time_12hr(time_obj):
     """Convert a time or timedelta object to 12-hour format string."""
     if not time_obj:
         return ""
-    if isinstance(time_obj, str):
-        for fmt in ("%H:%M:%S", "%H:%M"):
-            try:
-                time_obj = datetime.strptime(time_obj, fmt).time()
-                break
-            except ValueError:
-                continue
-    elif isinstance(time_obj, timedelta):
-        total_seconds = int(time_obj.total_seconds())
-        hours = total_seconds // 3600
-        minutes = (total_seconds % 3600) // 60
-        time_obj = time(hour=hours, minute=minutes)
-    return time_obj.strftime("%I:%M %p")
+    try:
+        if isinstance(time_obj, str):
+            for fmt in ("%H:%M:%S", "%H:%M"):
+                try:
+                    time_obj = datetime.strptime(time_obj, fmt).time()
+                    break
+                except ValueError:
+                    continue
+        elif isinstance(time_obj, timedelta):
+            total_seconds = int(time_obj.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            time_obj = time(hour=hours, minute=minutes)
+        return time_obj.strftime("%I:%M %p")
+    except Exception:
+        return ""
+
 
 def normalize_day(d):
     """Normalize day abbreviations or names to full day name."""
@@ -118,11 +144,13 @@ def normalize_day(d):
     }
     return map_.get(s, s.capitalize())
 
+
 def prettify_search_title(raw_title: str) -> str:
     """Format search titles nicely (capitalize words, strip extra spaces)."""
     if not raw_title:
         return ""
     return " ".join(word.capitalize() for word in raw_title.strip().split())
+
 
 def convert_timedelta_to_time(td):
     """Convert timedelta to time object."""
@@ -130,6 +158,7 @@ def convert_timedelta_to_time(td):
         total_seconds = int(td.total_seconds())
         return time(total_seconds // 3600, (total_seconds % 3600) // 60)
     return td
+
 
 def build_time_slots(start=7, end=20):
     """Generate half-hour time slots from start hour to end hour."""
@@ -139,9 +168,11 @@ def build_time_slots(start=7, end=20):
         slots.append(time(h, 30))
     return slots
 
+
 def initialize_grid(days, slots_len):
     """Create an empty schedule grid for given days and number of time slots."""
     return {day: [None] * slots_len for day in days}
+
 
 def find_index(time_slots, t):
     """Find index of the first slot >= t."""
@@ -150,11 +181,12 @@ def find_index(time_slots, t):
     except StopIteration:
         return len(time_slots)
 
+
 def insert_schedule_into_grid(grid, sched, days, time_slots):
     """Insert a schedule entry into the half-hour grid."""
-    start = sched['start_time']
-    end = sched['end_time']
-    day = sched['day_of_week']
+    start = sched.get('start_time')
+    end = sched.get('end_time')
+    day = sched.get('day_of_week')
     if not start or not end or day not in days:
         return
     start_idx = find_index(time_slots, start)
@@ -165,6 +197,7 @@ def insert_schedule_into_grid(grid, sched, days, time_slots):
     grid[day][start_idx] = {**sched, "rowspan": duration}
     for i in range(start_idx + 1, end_idx):
         grid[day][i] = "skip"
+
 
 # ------------------------
 # Fetch schedules
@@ -193,7 +226,7 @@ def fetch_all_schedules(search_query=None):
     """
     params = []
     if search_query:
-        keywords = search_query.lower().replace("-", " ").split()
+        keywords = re.split(r"[\s\-]+", search_query.lower().strip())
         for kw in keywords:
             kw_like = f"%{kw}%"
             sql += """
@@ -211,6 +244,8 @@ def fetch_all_schedules(search_query=None):
     sql += " ORDER BY FIELD(sc.day_of_week, 'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'), sc.start_time"
 
     with db_cursor(dictionary=True) as cursor:
+        if not cursor:
+            return []
         cursor.execute(sql, params)
         rows = cursor.fetchall()
 
@@ -221,6 +256,7 @@ def fetch_all_schedules(search_query=None):
         r['start_time_12'] = format_time_12hr(r['start_time'])
         r['end_time_12'] = format_time_12hr(r['end_time'])
     return rows
+
 
 # ------------------------
 # Routes
@@ -236,6 +272,7 @@ def view_all_schedules():
         schedules=schedules,
         search_title=q if q else None
     )
+
 
 @load_bp.route('/final', methods=['GET'])
 @admin_required
@@ -254,6 +291,7 @@ def view_final_schedule():
         days=days,
         time_slots=time_slots
     )
+
 
 @load_bp.route('/copy', methods=['GET'])
 @admin_required
