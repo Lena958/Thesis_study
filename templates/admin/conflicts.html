@@ -9,132 +9,45 @@
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
   <style>
     /* Buttons */
-    .btn-resolve {
-      background-color: #198754; /* dark green for contrast */
-      border: none;
-      color: #fff;
-      padding: 6px 12px;
-      cursor: pointer;
-      border-radius: 3px;
-      font-size: 0.9rem;
-      transition: background-color 0.3s ease;
-    }
-    .btn-resolve:hover:not(:disabled) {
-      background-color: #145c32;
-    }
-    .btn-resolve:disabled {
-      background-color: #6c757d;
-      cursor: not-allowed;
-    }
+    .btn-resolve { background-color: #198754; border: none; color: #fff; padding: 6px 12px; cursor: pointer; border-radius: 3px; font-size: 0.9rem; transition: background-color 0.3s ease; }
+    .btn-resolve:hover:not(:disabled) { background-color: #145c32; }
+    .btn-resolve:disabled { background-color: #6c757d; cursor: not-allowed; }
 
     /* Table */
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 1rem;
-    }
-    th, td {
-      padding: 0.75rem 1rem;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-      vertical-align: top;
-    }
-    th {
-      background-color: #f8f9fa;
-      color: #212529; /* high contrast */
-    }
+    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #ddd; vertical-align: top; }
+    th { background-color: #f8f9fa; color: #212529; }
 
     /* Status */
-    .status-resolved {
-      color: #198754;
-      font-weight: bold;
-    }
-    .status-unresolved {
-      color: #dc3545;
-      font-weight: bold;
-    }
+    .status-resolved { color: #198754; font-weight: bold; }
+    .status-unresolved { color: #dc3545; font-weight: bold; }
 
     /* Flash messages */
-    .flash-message {
-      background-color: #fff3cd;
-      border: 1px solid #ffeeba;
-      padding: 10px;
-      border-radius: 5px;
-      margin-top: 1rem;
-      color: #856404;
-    }
+    .flash-message { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; margin-top: 1rem; color: #856404; }
 
     /* Recommendations */
-    .recommendation {
-      font-size: 0.85rem;
-      color: #495057;
-      margin-top: 0.25rem;
-      display: block;
-    }
+    .recommendation { font-size: 0.85rem; color: #495057; margin-top: 0.25rem; display: block; }
 
     /* Profile & Sidebar */
-    .profile-pic {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-    .profile-icon {
-      font-size: 2rem;
-      color: #6c757d;
-    }
-    .sidebar-logo {
-      width: 80px;
-      height: 80px;
-    }
+    .profile-pic { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+    .profile-icon { font-size: 2rem; color: #6c757d; }
+    .sidebar-logo { width: 80px; height: 80px; }
 
     /* Dialog styling */
-    dialog {
-      border: none;
-      border-radius: 8px;
-      padding: 1.5rem;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      max-width: 400px;
-      width: 90%;
-    }
-    dialog::backdrop {
-      background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(2px);
-    }
-    dialog h3 {
-      margin-top: 0;
-    }
-    dialog menu {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
-      margin-top: 1rem;
-    }
-    dialog button {
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-    }
-    .btn-primary {
-      background-color: #198754;
-      color: #fff;
-    }
-    .btn-primary:hover {
-      background-color: #145c32;
-    }
-    .btn-secondary {
-      background-color: #6c757d;
-      color: #fff;
-    }
-    .btn-secondary:hover {
-      background-color: #5a6268;
-    }
+    dialog { border: none; border-radius: 8px; padding: 1.5rem; box-shadow: 0 4px 8px rgba(0,0,0,0.2); max-width: 400px; width: 90%; }
+    dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+    dialog h3 { margin-top: 0; }
+    dialog menu { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+    dialog button { padding: 0.5rem 1rem; border-radius: 6px; border: none; cursor: pointer; }
+    .btn-primary { background-color: #198754; color: #fff; }
+    .btn-primary:hover { background-color: #145c32; }
+    .btn-secondary { background-color: #6c757d; color: #fff; }
+    .btn-secondary:hover { background-color: #5a6268; }
   </style>
 </head>
 <body>
   <!-- Topbar -->
-  <div class="topbar">
+  <header class="topbar">
     <h1>College of Computing and Information Sciences</h1>
     <div class="topbar-profile">
       {% if instructor_image %}
@@ -144,10 +57,10 @@
       {% endif %}
       <button type="button" onclick="openLogoutModal()">Logout <i class="fas fa-sign-out-alt"></i></button>
     </div>
-  </div>
+  </header>
 
   <!-- Sidebar -->
-  <div class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-user">
       <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="sidebar-logo" />
       {% if instructor_name %}
@@ -167,7 +80,7 @@
       <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
       <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
     </nav>
-  </div>
+  </aside>
 
   <!-- Logout Modal -->
   <dialog id="logoutModal">

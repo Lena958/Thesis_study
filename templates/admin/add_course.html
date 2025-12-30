@@ -5,9 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Course</title>
 
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/add_courses.css') }}" />
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -26,10 +27,7 @@
       {% endif %}
 
       <!-- Logout Button -->
-      <button type="button"
-              class="logout-btn"
-              title="Logout"
-              onclick="openLogoutModal(event)">
+      <button type="button" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
         <i class="fas fa-sign-out-alt"></i> Logout
       </button>
     </div>
@@ -40,8 +38,7 @@
     <div class="sidebar-user">
       <img src="{{ url_for('static', filename='images/brand.png') }}"
            alt="CCISS Logo"
-           class="sidebar-logo">
-
+           class="sidebar-logo" />
       {% if instructor_name %}
         <p><strong>{{ instructor_name }}</strong></p>
       {% else %}
@@ -49,6 +46,7 @@
       {% endif %}
     </div>
 
+    <!-- Navigation Links -->
     <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
     <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
     <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
@@ -63,14 +61,7 @@
   <!-- Logout Modal -->
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-
-      <!-- Close Button -->
-      <button type="button"
-              class="close"
-              aria-label="Close logout modal"
-              onclick="closeLogoutModal()">
-        &times;
-      </button>
+      <button type="button" class="close" aria-label="Close logout modal" onclick="closeLogoutModal()">&times;</button>
 
       <h3>Confirm Logout</h3>
       <p>Are you sure you want to logout?</p>
@@ -89,20 +80,24 @@
 
         <h2 class="form-title">Add New Course</h2>
 
+        <!-- Course Code -->
         <label for="course_code">Course Code:</label>
-        <input id="course_code" type="text" name="course_code" required>
+        <input id="course_code" type="text" name="course_code" required />
 
+        <!-- Course Name -->
         <label for="course_name">Course Name:</label>
-        <input id="course_name" type="text" name="course_name" required>
+        <input id="course_name" type="text" name="course_name" required />
 
+        <!-- Program -->
         <label for="program">Program:</label>
-        <input id="program" list="programs" name="program" placeholder="Enter Program" required>
+        <input id="program" list="programs" name="program" placeholder="Enter Program" required />
         <datalist id="programs">
           {% for program in programs %}
             <option value="{{ program }}"></option>
           {% endfor %}
         </datalist>
 
+        <!-- Course Type -->
         <label for="course_type">Course Type:</label>
         <select id="course_type" name="course_type" required>
           <option value="">--Select Type--</option>
@@ -111,6 +106,7 @@
           <option value="GEE">GEE</option>
         </select>
 
+        <!-- Semester -->
         <label for="semester">Semester:</label>
         <select id="semester" name="semester" required>
           <option value="">--Select Semester--</option>
@@ -119,29 +115,19 @@
           <option value="Summer">Summer</option>
         </select>
 
+        <!-- School Year -->
         <label for="school_year">School Year:</label>
-        <input id="school_year"
-               list="school_years"
-               name="school_year"
-               placeholder="e.g., 2025-2026"
-               required>
-
+        <input id="school_year" list="school_years" name="school_year" placeholder="e.g., 2025-2026" required />
         <datalist id="school_years">
           {% for year in school_years %}
             <option value="{{ year }}"></option>
           {% endfor %}
         </datalist>
 
+        <!-- Form Actions -->
         <div class="form-actions"></div>
-
         <button type="submit" class="btn">Add Course</button>
-
-        <!-- Cancel Button -->
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="globalThis.location.href='{{ url_for('courses.list_courses') }}';">
-          Cancel
-        </button>
+        <button type="button" class="btn btn-secondary" onclick="globalThis.location.href='{{ url_for('courses.list_courses') }}';">Cancel</button>
 
       </form>
     </div>
@@ -168,4 +154,3 @@
 
 </body>
 </html>
-

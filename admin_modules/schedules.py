@@ -1,4 +1,5 @@
-"""Schedule management routes for the admin panel.
+"""
+Schedule management routes for the admin panel.
 
 Provides CRUD operations, approval, and conflict checking for schedules.
 """
@@ -25,17 +26,14 @@ DB_CONFIG = {
 
 SCHEDULES_LIST_ROUTE = 'schedules.list_schedules'
 
-
 # -------------------- Helper Functions --------------------
 def get_db_connection():
     """Return a new MySQL connection."""
     return mysql.connector.connect(**DB_CONFIG)
 
-
 def is_admin():
     """Check if the current user is an admin."""
     return session.get('role') == 'admin'
-
 
 def admin_required(f):
     """Decorator to protect admin routes."""
@@ -45,7 +43,6 @@ def admin_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
-
 
 @contextmanager
 def db_cursor(dictionary=False):
@@ -58,7 +55,6 @@ def db_cursor(dictionary=False):
     finally:
         cursor.close()
         conn.close()
-
 
 # -------------------- Context Processor --------------------
 @schedules_bp.context_processor
@@ -79,7 +75,6 @@ def inject_instructor_name():
         "instructor_image": instructor['image'] if instructor and instructor['image'] else None
     }
 
-
 # -------------------- Time Formatting --------------------
 def format_time_12hr(time_obj):
     """Return a 12-hour formatted string."""
@@ -94,7 +89,6 @@ def format_time_12hr(time_obj):
         time_obj = datetime.strptime(f"{hours}:{minutes}", "%H:%M").time()
     return time_obj.strftime("%I:%M %p")
 
-
 def format_time_24hr(time_obj):
     """Return a 24-hour formatted string."""
     if isinstance(time_obj, str):
@@ -105,7 +99,6 @@ def format_time_24hr(time_obj):
         minutes = (total_seconds % 3600) // 60
         time_obj = datetime.strptime(f"{hours}:{minutes}", "%H:%M").time()
     return time_obj.strftime("%H:%M")
-
 
 # -------------------- Fetch Schedules --------------------
 def fetch_schedules(approved=None, complete_only=False):
@@ -151,7 +144,6 @@ def fetch_schedules(approved=None, complete_only=False):
 
     return schedules
 
-
 # -------------------- Routes --------------------
 @schedules_bp.route('/')
 @admin_required
@@ -159,18 +151,13 @@ def list_schedules():
     schedules = fetch_schedules(approved=0)
     return render_template("admin/schedules.html", schedules=schedules)
 
-
 @schedules_bp.route('/view')
 @admin_required
 def view_all_schedules():
     schedules = fetch_schedules(approved=1, complete_only=True)
     return render_template("schedules/view.html", schedules=schedules)
 
-
-# ============================================================
-# INPUT VALIDATION HELPERS
-# ============================================================
-
+# -------------------- Input Validation Helpers --------------------
 def sanitize_day_of_week(value):
     valid_days = {
         "Monday", "Tuesday", "Wednesday",
@@ -181,7 +168,6 @@ def sanitize_day_of_week(value):
     value = value.strip().capitalize()
     return value if value in valid_days else None
 
-
 def validate_time_range(start_time, end_time):
     try:
         start = datetime.strptime(start_time, "%H:%M").time()
@@ -190,7 +176,6 @@ def validate_time_range(start_time, end_time):
         return None
     return (start, end) if start < end else None
 
-
 def sanitize_year_level(value):
     try:
         value = int(value)
@@ -198,20 +183,17 @@ def sanitize_year_level(value):
         return None
     return value if 1 <= value <= 5 else None
 
-
 def sanitize_section(value):
     if not isinstance(value, str):
         return None
     value = value.strip().upper()
     return value if re.fullmatch(r"[A-Z0-9]{1,5}", value) else None
 
-
 def sanitize_course_name(value):
     if not isinstance(value, str):
         return None
     value = value.strip()
     return value if re.fullmatch(r"[A-Za-z\s&\-]{2,100}", value) else None
-
 
 def sanitize_instructor_name(value):
     """Validate instructor name."""
@@ -220,11 +202,7 @@ def sanitize_instructor_name(value):
     value = value.strip()
     return value if re.fullmatch(r"[A-Za-z\s\-']{2,100}", value) else None
 
-
-# ============================================================
-# TEST CASES (MATCHING YOUR PROVIDED FORMAT)
-# ============================================================
-
+# -------------------- Test Cases --------------------
 if __name__ == "__main__":
     print("Interactive and automatic quick tests for schedules_routes.py\n")
 

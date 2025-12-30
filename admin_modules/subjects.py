@@ -21,8 +21,10 @@ DB_CONFIG = {
 LOGIN_ROUTE = 'login'
 LIST_SUBJECTS_ROUTE = 'subjects.list_subjects'
 
+# ============================================================
+# DATABASE LAYER
+# ============================================================
 
-# -------------------- Database Context Manager --------------------
 @contextmanager
 def db_cursor():
     """Provide a MySQL cursor with automatic commit and cleanup."""
@@ -36,12 +38,6 @@ def db_cursor():
         conn.close()
 
 
-# -------------------- Helper Functions --------------------
-def is_admin():
-    """Return True if current user is an admin."""
-    return session.get('role') == 'admin'
-
-
 def query_db(query, args=(), one=False):
     """Execute a query and return result(s)."""
     with db_cursor() as cursor:
@@ -52,8 +48,18 @@ def query_db(query, args=(), one=False):
                 return rows[0] if rows else None
             return rows
 
+# ============================================================
+# AUTHENTICATION & USER ROLE
+# ============================================================
 
-# -------------------- Context Processor --------------------
+def is_admin():
+    """Return True if current user is an admin."""
+    return session.get('role') == 'admin'
+
+# ============================================================
+# CONTEXT PROCESSORS
+# ============================================================
+
 @subjects_bp.context_processor
 def inject_instructor_name():
     """Inject instructor's name and image into templates."""
@@ -71,8 +77,10 @@ def inject_instructor_name():
         'instructor_image': instructor['image'] if instructor and instructor['image'] else None
     }
 
+# ============================================================
+# AJAX ENDPOINTS
+# ============================================================
 
-# -------------------- AJAX Endpoints --------------------
 @subjects_bp.route('/subject-info')
 def subject_info():
     code = request.args.get('code')
@@ -80,7 +88,6 @@ def subject_info():
         return jsonify({})
     subject = query_db("SELECT name FROM subjects WHERE code = %s", (code,), one=True)
     return jsonify(subject or {})
-
 
 @subjects_bp.route('/instructors-by-course')
 def instructors_by_course():
@@ -92,20 +99,33 @@ def instructors_by_course():
     )
     return jsonify(instructors)
 
+# ============================================================
+# SUBJECT CRUD OPERATIONS
+# ============================================================
 
-# -------------------- Subject CRUD --------------------
-@subjects_bp.route('/')
-def list_subjects():
-    if not is_admin():
-        return redirect(url_for(LOGIN_ROUTE))
+def get_subject(subject_id):
+    """Retrieve a single subject with instructor name."""
+    return query_db("""
+        SELECT s.*, i.name AS instructor_name
+        FROM subjects s
+        LEFT JOIN instructors i ON s.instructor_id = i.instructor_id
+        WHERE s.subject_id = %s
+    """, (subject_id,), one=True)
 
-    subjects = query_db("""
+def get_all_subjects():
+    """Retrieve all subjects with instructor names."""
+    return query_db("""
         SELECT s.*, i.name AS instructor_name
         FROM subjects s
         LEFT JOIN instructors i ON s.instructor_id = i.instructor_id
     """)
-    return render_template("admin/subjects.html", subjects=subjects)
 
+@subjects_bp.route('/')
+def list_subjects():
+    if not is_admin():
+        return redirect(url_for(LOGIN_ROUTE))
+    subjects = get_all_subjects()
+    return render_template("admin/subjects.html", subjects=subjects)
 
 @subjects_bp.route('/add', methods=['GET', 'POST'])
 def add_subject():
@@ -132,7 +152,6 @@ def add_subject():
         return redirect(url_for(LIST_SUBJECTS_ROUTE))
 
     return render_template("admin/add_subject.html", instructors=instructors, courses=courses)
-
 
 @subjects_bp.route('/edit/<int:subject_id>', methods=['GET', 'POST'])
 def edit_subject(subject_id):
@@ -161,7 +180,6 @@ def edit_subject(subject_id):
 
     return render_template("admin/edit_subject.html", subject=subject)
 
-
 @subjects_bp.route('/delete/<int:subject_id>', methods=['POST'])
 def delete_subject(subject_id):
     if not is_admin():
@@ -170,21 +188,12 @@ def delete_subject(subject_id):
     flash("Subject deleted successfully")
     return redirect(url_for(LIST_SUBJECTS_ROUTE))
 
-
 @subjects_bp.route('/view/<int:subject_id>')
 def view_subject(subject_id):
     if not is_admin():
         return redirect(url_for(LOGIN_ROUTE))
-
-    subject = query_db("""
-        SELECT s.*, i.name AS instructor_name
-        FROM subjects s
-        LEFT JOIN instructors i ON s.instructor_id = i.instructor_id
-        WHERE s.subject_id = %s
-    """, (subject_id,), one=True)
-
+    subject = get_subject(subject_id)
     return render_template("admin/view_subject.html", subject=subject)
-
 
 # ============================================================
 # INPUT VALIDATION HELPERS
@@ -196,13 +205,11 @@ def sanitize_subject_code(value):
     value = value.strip().upper()
     return value if re.fullmatch(r"[A-Z0-9\-]{2,15}", value) else None
 
-
 def sanitize_subject_name(value):
     if not isinstance(value, str):
         return None
     value = value.strip()
     return value if re.fullmatch(r"[A-Za-z0-9\s\-&]{3,100}", value) else None
-
 
 def validate_units(value):
     try:
@@ -211,7 +218,6 @@ def validate_units(value):
         return None
     return value if 1 <= value <= 10 else None
 
-
 def sanitize_year_level(value):
     try:
         value = int(value)
@@ -219,13 +225,11 @@ def sanitize_year_level(value):
         return None
     return value if 1 <= value <= 5 else None
 
-
 def sanitize_section(value):
     if not isinstance(value, str):
         return None
     value = value.strip().upper()
     return value if re.fullmatch(r"[A-Z0-9]{1,5}", value) else None
-
 
 def sanitize_course_name(value):
     if not isinstance(value, str):
@@ -233,13 +237,11 @@ def sanitize_course_name(value):
     value = value.strip()
     return value if re.fullmatch(r"[A-Za-z\s&\-]{2,100}", value) else None
 
-
 def sanitize_instructor_name(value):
     if not isinstance(value, str):
         return None
     value = value.strip()
     return value if re.fullmatch(r"[A-Za-z\s\-']{2,100}", value) else None
-
 
 # ============================================================
 # TEST CASES (MATCHING YOUR FORMAT)
@@ -273,3 +275,4 @@ if __name__ == "__main__":
         print(f"Instructor test: '{i}' -> {sanitize_instructor_name(i)}")
 
     print("\nAll tests completed!")
+

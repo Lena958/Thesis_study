@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Room</title>
 
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/rooms.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
@@ -13,35 +14,26 @@
 <body>
 
   <!-- Topbar -->
-  <div class="topbar">
+  <header class="topbar">
     <h1>College of Computing and Information Sciences</h1>
 
     <div class="topbar-profile">
       {% if instructor_image %}
-        <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
-             alt="Profile"
-             class="profile-pic" />
+        <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}" alt="Profile" class="profile-pic" />
       {% else %}
         <i class="fas fa-user-circle profile-icon"></i>
       {% endif %}
 
-      <!-- Logout Button -->
-      <button type="button"
-              class="logout-btn"
-              title="Logout"
-              onclick="openLogoutModal(event)">
+      <button type="button" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
         <i class="fas fa-sign-out-alt"></i> Logout
       </button>
     </div>
-  </div>
+  </header>
 
   <!-- Sidebar -->
-  <div class="sidebar">
+  <nav class="sidebar">
     <div class="sidebar-user">
-      <img src="{{ url_for('static', filename='images/brand.png') }}"
-           alt="CCISS Logo"
-           class="sidebar-logo">
-
+      <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="sidebar-logo">
       {% if instructor_name %}
         <p><strong>{{ instructor_name }}</strong></p>
       {% else %}
@@ -49,28 +41,23 @@
       {% endif %}
     </div>
 
-    <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-    <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-    <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-    <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-    <a href="{{ url_for('rooms.list_rooms') }}" class="active"><i class="fas fa-door-open"></i> Rooms</a>
-    <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-    <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-    <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-    <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
-  </div>
+    <ul class="sidebar-links">
+      <li><a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a></li>
+      <li><a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a></li>
+      <li><a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a></li>
+      <li><a href="{{ url_for('rooms.list_rooms') }}" class="active"><i class="fas fa-door-open"></i> Rooms</a></li>
+      <li><a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a></li>
+      <li><a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a></li>
+      <li><a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a></li>
+      <li><a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a></li>
+    </ul>
+  </nav>
 
   <!-- Logout Modal -->
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-
-      <!-- Close Button -->
-      <button type="button"
-              class="close"
-              aria-label="Close logout modal"
-              onclick="closeLogoutModal()">
-        &times;
-      </button>
+      <button type="button" class="close" aria-label="Close logout modal" onclick="closeLogoutModal()">&times;</button>
 
       <h3>Confirm Logout</h3>
       <p>Are you sure you want to logout?</p>
@@ -83,7 +70,7 @@
   </div>
 
   <!-- Main Content -->
-  <div class="main-content">
+  <main class="main-content">
 
     <!-- Flash Messages -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -97,61 +84,52 @@
     {% endwith %}
 
     <!-- Add Room Form -->
-    <div class="main-form">
-      <form method="POST"
-            action="{{ url_for('rooms.add_room') }}"
-            enctype="multipart/form-data">
+    <section class="main-form">
+      <form method="POST" action="{{ url_for('rooms.add_room') }}" enctype="multipart/form-data">
 
         <h2 class="form-title">Add Room</h2>
 
-        <label for="room_number">Room Number:</label>
-        <input type="text"
-               name="room_number"
-               id="room_number"
-               placeholder="e.g. CL1, Lab 204"
-               required>
+        <!-- Room Info -->
+        <fieldset>
+          <legend>Room Information</legend>
 
-        <label for="room_type">Room Type:</label>
-        <select name="room_type" id="room_type" required>
-          <option value="" disabled selected>Select type</option>
-          <option value="Lecture">Lecture</option>
-          <option value="Lab">Lab</option>
-        </select>
+          <label for="room_number">Room Number:</label>
+          <input type="text" name="room_number" id="room_number" placeholder="e.g. CL1, Lab 204" required>
 
-        <label for="program">Program:</label>
-        <input type="text"
-               name="program"
-               id="program"
-               list="programList"
-               placeholder="Select or enter program">
+          <label for="room_type">Room Type:</label>
+          <select name="room_type" id="room_type" required>
+            <option value="" disabled selected>Select type</option>
+            <option value="Lecture">Lecture</option>
+            <option value="Lab">Lab</option>
+          </select>
 
-        <datalist id="programList">
-          {% for program in programs %}
-            <option value="{{ program.program_name }}">
-          {% endfor %}
-        </datalist>
+          <label for="program">Program:</label>
+          <input type="text" name="program" id="program" list="programList" placeholder="Select or enter program">
+          <datalist id="programList">
+            {% for program in programs %}
+              <option value="{{ program.program_name }}">
+            {% endfor %}
+          </datalist>
 
-        <label for="image">Room Image (optional):</label>
-        <input type="file"
-               name="image"
-               id="image"
-               accept="image/png, image/jpeg, image/jpg">
+          <label for="image">Room Image (optional):</label>
+          <input type="file" name="image" id="image" accept="image/png, image/jpeg, image/jpg">
+        </fieldset>
 
-        <button type="submit" class="btn">Add Room</button>
-
-        <!-- Cancel Button -->
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="globalThis.location.href='{{ url_for('rooms.list_rooms') }}';">
-          Cancel
-        </button>
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="submit" class="btn">Add Room</button>
+          <button type="button" class="btn btn-secondary" onclick="globalThis.location.href='{{ url_for('rooms.list_rooms') }}';">
+            Cancel
+          </button>
+        </div>
 
       </form>
-    </div>
-  </div>
+    </section>
+  </main>
 
   <!-- JavaScript -->
   <script>
+    // Logout modal handlers
     function openLogoutModal(event) {
       event.preventDefault();
       document.getElementById('logoutModal').style.display = 'block';

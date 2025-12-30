@@ -271,9 +271,9 @@ def delete_course(course_id):
 if __name__ == "__main__":
     print("Interactive and automatic quick tests for courses_bp.py\n")
 
-    # ----------------------------
-    # AUTOMATIC INPUT VALIDATION TESTS
-    # ----------------------------
+# ----------------------------
+# AUTOMATIC INPUT VALIDATION TESTS
+# ----------------------------
     test_courses = [
         {
             'course_code': 'CS101',

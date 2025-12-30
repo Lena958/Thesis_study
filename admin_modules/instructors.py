@@ -3,294 +3,330 @@ Instructor management module for admin routes.
 Handles login, listing, adding, editing, and deleting instructors.
 """
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from werkzeug.security import generate_password_hash, check_password_hash
+# ==================================================
+# 1. Imports
+# ==================================================
 import mysql.connector
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    session,
+)
+from werkzeug.security import generate_password_hash, check_password_hash
 
-instructors_bp = Blueprint('instructors', __name__, url_prefix='/admin/instructors')
 
-# Database configuration
-db_config = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': '',
-    'database': 'iload'
+# ==================================================
+# 2. Blueprint Definition
+# ==================================================
+instructors_bp = Blueprint(
+    "instructors",
+    __name__,
+    url_prefix="/admin/instructors",
+)
+
+
+# ==================================================
+# 3. Database Configuration
+# ==================================================
+DB_CONFIG = {
+    "host": "localhost",
+    "user": "root",
+    "password": "",
+    "database": "iload",
 }
 
-# Constants
-NO_INSTRUCTOR_INFO = {"instructor_name": None, "instructor_image": None}
-LIST_INSTRUCTORS_ENDPOINT = 'instructors.list_instructors'
-LOGIN_ENDPOINT = 'instructors.login'
+
+# ==================================================
+# 4. Constants
+# ==================================================
+NO_INSTRUCTOR_INFO = {
+    "instructor_name": None,
+    "instructor_image": None,
+}
+
+LIST_INSTRUCTORS_ENDPOINT = "instructors.list_instructors"
+LOGIN_ENDPOINT = "instructors.login"
 
 
+# ==================================================
+# 5. Database & Auth Helpers
+# ==================================================
 def get_db_connection():
     """Return a new database connection."""
-    return mysql.connector.connect(**db_config)
+    return mysql.connector.connect(**DB_CONFIG)
 
 
-def is_admin_user():
-    """Check if the current session user is an admin."""
-    return session.get('role') == 'admin'
+def is_admin():
+    """Return True if current session user is an admin."""
+    return session.get("role") == "admin"
 
 
-# Login route
-@instructors_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    """Handle instructor login."""
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM instructors WHERE username = %s", (username,))
-        user = cursor.fetchone()
-        conn.close()
-
-        if user and check_password_hash(user['password'], password):
-            session['user_id'] = user['instructor_id']
-            session['role'] = user['role']
-            flash("Logged in successfully!", "success")
-            return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
-
-        flash("Invalid username or password", "danger")
-
-    return render_template('login.html')
-
-
-# Context processor for logged-in instructor's info
+# ==================================================
+# 6. Context Processor
+# ==================================================
 @instructors_bp.context_processor
 def inject_instructor_name():
     """Inject instructor info into templates."""
-    if 'user_id' not in session:
+    if "user_id" not in session:
         return NO_INSTRUCTOR_INFO
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute(
         "SELECT name, image FROM instructors WHERE instructor_id = %s",
-        (session['user_id'],)
+        (session["user_id"],),
     )
     instructor = cursor.fetchone()
+    cursor.close()
     conn.close()
 
     return {
-        "instructor_name": instructor['name'] if instructor else None,
-        "instructor_image": instructor['image'] if instructor and instructor['image'] else None
+        "instructor_name": instructor["name"] if instructor else None,
+        "instructor_image": instructor["image"]
+        if instructor and instructor["image"]
+        else None,
     }
 
 
-# List all instructors
-@instructors_bp.route('/')
+# ==================================================
+# 7. Authentication Routes
+# ==================================================
+@instructors_bp.route("/login", methods=["GET", "POST"])
+def login():
+    """Handle instructor login."""
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(
+            "SELECT * FROM instructors WHERE username = %s",
+            (username,),
+        )
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        if user and check_password_hash(user["password"], password):
+            session["user_id"] = user["instructor_id"]
+            session["role"] = user["role"]
+            flash("Logged in successfully.", "success")
+            return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
+
+        flash("Invalid username or password.", "danger")
+
+    return render_template("login.html")
+
+
+# ==================================================
+# 8. Instructor CRUD Routes
+# ==================================================
+@instructors_bp.route("/")
 def list_instructors():
-    """Display all instructors."""
-    if not is_admin_user():
+    """List all instructors."""
+    if not is_admin():
         return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     cursor.execute("SELECT * FROM instructors")
     instructors = cursor.fetchall()
+    cursor.close()
     conn.close()
-    return render_template("admin/instructors.html", instructors=instructors)
+
+    return render_template(
+        "admin/instructors.html",
+        instructors=instructors,
+    )
 
 
-# Add instructor
-@instructors_bp.route('/add', methods=['GET', 'POST'])
+@instructors_bp.route("/add", methods=["GET", "POST"])
 def add_instructor():
     """Add a new instructor."""
-    if not is_admin_user():
+    if not is_admin():
         return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Fetch distinct programs and statuses
     cursor.execute(
-        "SELECT DISTINCT program FROM instructors WHERE program IS NOT NULL AND program != ''"
+        "SELECT DISTINCT program FROM instructors "
+        "WHERE program IS NOT NULL AND program != ''"
     )
-    programs = [row['program'] for row in cursor.fetchall()]
+    programs = [row["program"] for row in cursor.fetchall()]
 
     cursor.execute(
-        "SELECT DISTINCT status FROM instructors WHERE status IS NOT NULL AND status != ''"
+        "SELECT DISTINCT status FROM instructors "
+        "WHERE status IS NOT NULL AND status != ''"
     )
-    statuses = [row['status'] for row in cursor.fetchall()]
+    statuses = [row["status"] for row in cursor.fetchall()]
 
+    cursor.close()
     conn.close()
 
-    if request.method == 'POST':
-        name = request.form['name']
-        max_load_units = request.form['max_load_units']
-        department = request.form['department']
-        program = request.form['program']
-        status = request.form['status']
-        username = request.form['username']
-        password = request.form['password']
-        role = request.form['role']
+    if request.method == "POST":
+        data = {
+            "name": request.form.get("name", "").strip(),
+            "max_load_units": request.form.get("max_load_units"),
+            "department": request.form.get("department", "").strip(),
+            "program": request.form.get("program", "").strip(),
+            "status": request.form.get("status", "").strip(),
+            "username": request.form.get("username", "").strip(),
+            "password": request.form.get("password", ""),
+            "role": request.form.get("role", "").strip(),
+        }
 
-        hashed_password = generate_password_hash(password)
+        hashed_password = generate_password_hash(data["password"])
 
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute(
             """
-            INSERT INTO instructors (name, max_load_units, department, program, status, username, password, role)
+            INSERT INTO instructors
+            (name, max_load_units, department, program, status,
+             username, password, role)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            (name, max_load_units, department, program, status, username, hashed_password, role)
+            (
+                data["name"],
+                data["max_load_units"],
+                data["department"],
+                data["program"],
+                data["status"],
+                data["username"],
+                hashed_password,
+                data["role"],
+            ),
         )
         conn.commit()
+        cursor.close()
         conn.close()
 
-        flash("Instructor added successfully", "success")
+        flash("Instructor added successfully.", "success")
         return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
 
     return render_template(
         "admin/add_instructor.html",
         programs=programs,
-        statuses=statuses
+        statuses=statuses,
     )
 
 
-# Edit instructor
-@instructors_bp.route('/edit/<int:instructor_id>', methods=['GET', 'POST'])
+@instructors_bp.route("/edit/<int:instructor_id>", methods=["GET", "POST"])
 def edit_instructor(instructor_id):
     """Edit an existing instructor."""
-    if not is_admin_user():
+    if not is_admin():
         return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
     cursor.execute(
-        "SELECT DISTINCT program FROM instructors WHERE program IS NOT NULL AND program != ''"
+        "SELECT DISTINCT program FROM instructors "
+        "WHERE program IS NOT NULL AND program != ''"
     )
-    programs = [row['program'] for row in cursor.fetchall()]
+    programs = [row["program"] for row in cursor.fetchall()]
 
     cursor.execute(
-        "SELECT DISTINCT status FROM instructors WHERE status IS NOT NULL AND status != ''"
+        "SELECT DISTINCT status FROM instructors "
+        "WHERE status IS NOT NULL AND status != ''"
     )
-    statuses = [row['status'] for row in cursor.fetchall()]
+    statuses = [row["status"] for row in cursor.fetchall()]
 
-    if request.method == 'POST':
-        name = request.form['name']
-        max_load_units = request.form['max_load_units']
-        department = request.form['department']
-        program = request.form['program']
-        status = request.form['status']
-
+    if request.method == "POST":
         cursor.execute(
             """
             UPDATE instructors
-            SET name=%s, max_load_units=%s, department=%s, program=%s, status=%s
+            SET name=%s, max_load_units=%s, department=%s,
+                program=%s, status=%s
             WHERE instructor_id=%s
             """,
-            (name, max_load_units, department, program, status, instructor_id)
+            (
+                request.form.get("name"),
+                request.form.get("max_load_units"),
+                request.form.get("department"),
+                request.form.get("program"),
+                request.form.get("status"),
+                instructor_id,
+            ),
         )
         conn.commit()
+        cursor.close()
         conn.close()
-        flash("Instructor updated successfully", "success")
+
+        flash("Instructor updated successfully.", "success")
         return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
 
-    cursor.execute("SELECT * FROM instructors WHERE instructor_id = %s", (instructor_id,))
+    cursor.execute(
+        "SELECT * FROM instructors WHERE instructor_id = %s",
+        (instructor_id,),
+    )
     instructor = cursor.fetchone()
+    cursor.close()
     conn.close()
 
     return render_template(
         "admin/edit_instructor.html",
         instructor=instructor,
         programs=programs,
-        statuses=statuses
+        statuses=statuses,
     )
 
 
-# Delete instructor
-@instructors_bp.route('/delete/<int:instructor_id>', methods=['POST'])
+@instructors_bp.route("/delete/<int:instructor_id>", methods=["POST"])
 def delete_instructor(instructor_id):
     """Delete an instructor."""
-    if not is_admin_user():
+    if not is_admin():
         return redirect(url_for(LOGIN_ENDPOINT))
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM instructors WHERE instructor_id = %s", (instructor_id,))
+    cursor.execute(
+        "DELETE FROM instructors WHERE instructor_id = %s",
+        (instructor_id,),
+    )
     conn.commit()
+    cursor.close()
     conn.close()
-    flash("Instructor deleted successfully", "success")
+
+    flash("Instructor deleted successfully.", "success")
     return redirect(url_for(LIST_INSTRUCTORS_ENDPOINT))
 
-# ==================================================
-# 7. QUICK AUTOMATIC AND INTERACTIVE TESTS
-# ==================================================
 
+# ==================================================
+# 9. QUICK AUTOMATIC AND INTERACTIVE TESTS
+# ==================================================
 if __name__ == "__main__":
-    from werkzeug.security import check_password_hash
-
     print("Interactive and automatic quick tests for instructors_bp.py\n")
 
-    # ----------------------------
-    # AUTOMATIC INPUT VALIDATION TESTS
-    # ----------------------------
-    test_names = ["John Doe", "Anne-Marie O'Neill", "Invalid123", ""]
-    for name in test_names:
-        valid = bool(name) and all(c.isalpha() or c in " -'" for c in name)
-        print(f"Name test: '{name}' -> {'PASS' if valid else 'FAIL'}")
+    test_instructors = [
+        {"name": "Alice Johnson", "program": "Math", "loads": 3, "status": "active"},
+        {"name": "", "program": "Science", "loads": 2, "status": "active"},
+        {"name": "Bob Smith", "program": "", "loads": 0, "status": "inactive"},
+        {"name": "Carol Lee", "program": "History", "loads": 5, "status": "active"},
+    ]
 
-    test_usernames = ["john_doe", "user123", "Invalid User!", "a", "this_is_a_very_long_username_exceeding_fifty_chars_123"]
-    for username in test_usernames:
-        valid = username.isalnum() or "_" in username and 3 <= len(username) <= 50
-        print(f"Username test: '{username}' -> {'PASS' if valid else 'FAIL'}")
+    valid_statuses = {"active", "inactive"}
 
-    test_departments = ["IT", "Computer Science & AI", "Dept@123", ""]
-    for dept in test_departments:
-        valid = bool(dept) and all(c.isalnum() or c in " &" for c in dept)
-        print(f"Department test: '{dept}' -> {'PASS' if valid else 'FAIL'}")
+    for inst in test_instructors:
+        name_valid = bool(inst["name"].strip())
+        program_valid = bool(inst["program"].strip())
+        loads_valid = isinstance(inst["loads"], int) and inst["loads"] >= 0
+        status_valid = inst["status"] in valid_statuses
 
-    test_max_load_units = ["15", "-5", "0", "abc", "20"]
-    for units in test_max_load_units:
-        try:
-            units_val = int(units)
-            valid = units_val > 0
-        except ValueError:
-            valid = False
-        print(f"Max load units test: '{units}' -> {'PASS' if valid else 'FAIL'}")
+        all_valid = name_valid and program_valid and loads_valid and status_valid
+        print(
+            f"Instructor test '{inst['name']}' -> "
+            f"{'PASS' if all_valid else 'FAIL'} "
+            f"(Name: {'OK' if name_valid else 'FAIL'}, "
+            f"Program: {'OK' if program_valid else 'FAIL'}, "
+            f"Loads: {'OK' if loads_valid else 'FAIL'}, "
+            f"Status: {'OK' if status_valid else 'FAIL'})"
+        )
 
-    # ----------------------------
-    # PASSWORD HASHING TEST
-    # ----------------------------
-    test_passwords = ["StrongPass1!", "weak", "123456", "Another$Pass123"]
-    for pw in test_passwords:
-        hashed = generate_password_hash(pw)
-        check = check_password_hash(hashed, pw)
-        print(f"Password test: '{pw}' -> Hashed OK: {check} -> {'PASS' if check else 'FAIL'}")
-
-    # ----------------------------
-    # INTERACTIVE TESTS
-    # ----------------------------
-    print("\n=== INTERACTIVE TESTS ===")
-    name_input = input("Enter instructor name to test: ").strip()
-    valid_name = bool(name_input) and all(c.isalpha() or c in " -'" for c in name_input)
-    print(f"Name result: {name_input} -> {'PASS' if valid_name else 'FAIL'}")
-
-    username_input = input("Enter username to test: ").strip()
-    valid_username = username_input.isalnum() or "_" in username_input and 3 <= len(username_input) <= 50
-    print(f"Username result: {username_input} -> {'PASS' if valid_username else 'FAIL'}")
-
-    department_input = input("Enter department to test: ").strip()
-    valid_dept = bool(department_input) and all(c.isalnum() or c in " &" for c in department_input)
-    print(f"Department result: {department_input} -> {'PASS' if valid_dept else 'FAIL'}")
-
-    max_units_input = input("Enter max load units to test: ").strip()
-    try:
-        units_val = int(max_units_input)
-        valid_units = units_val > 0
-    except ValueError:
-        valid_units = False
-    print(f"Max load units result: {max_units_input} -> {'PASS' if valid_units else 'FAIL'}")
-
-    password_input = input("Enter password to test hashing: ").strip()
-    hashed_pw = generate_password_hash(password_input)
-    valid_pw = check_password_hash(hashed_pw, password_input)
-    print(f"Password hash check: {valid_pw} -> {'PASS' if valid_pw else 'FAIL'}")
-
-    print("\nAll interactive tests completed!")
+    print("\nAll tests completed.")

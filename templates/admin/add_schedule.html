@@ -5,17 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Add Schedule</title>
 
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    rel="stylesheet"
-  />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
 </head>
 
 <body>
 
   <!-- Sidebar -->
-  <div class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-user">
       <i class="fas fa-user-circle" style="font-size: 2rem; color: #F5C500"></i><br />
       {% if instructor_name %}
@@ -25,56 +23,39 @@
       {% endif %}
     </div>
 
-    <a href="{{ url_for('dashboard.admin_dashboard') }}">
-      <i class="fas fa-tachometer-alt"></i> Dashboard
-    </a>
-    <a href="{{ url_for('admin.profile') }}" class="active">
-      <i class="fas fa-user"></i> Profile
-    </a>
-    <a href="{{ url_for('instructors.list_instructors') }}">
-      <i class="fas fa-chalkboard-teacher"></i> Instructors
-    </a>
-    <a href="{{ url_for('subjects.list_subjects') }}">
-      <i class="fas fa-book"></i> CCISS Loader
-    </a>
-    <a href="{{ url_for('rooms.list_rooms') }}">
-      <i class="fas fa-door-open"></i> Rooms
-    </a>
-    <a href="{{ url_for('schedules.list_schedules') }}">
-      <i class="fas fa-calendar-alt"></i> Schedules
-    </a>
-    <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}">
-      <i class="fas fa-cogs"></i> Auto-Scheduler
-    </a>
-    <a href="{{ url_for('conflicts.list_conflicts') }}">
-      <i class="fas fa-exclamation-triangle"></i> Conflicts
-    </a>
-    <a href="{{ url_for('feedback.list_feedback') }}">
-      <i class="fas fa-comment-dots"></i> Courses
-    </a>
-    <a href="{{ url_for('logout') }}">
-      <i class="fas fa-sign-out-alt"></i> Logout
-    </a>
-  </div>
+    <ul class="sidebar-links">
+      <li><a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><a href="{{ url_for('admin.profile') }}" class="active"><i class="fas fa-user"></i> Profile</a></li>
+      <li><a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a></li>
+      <li><a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a></li>
+      <li><a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a></li>
+      <li><a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a></li>
+      <li><a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a></li>
+      <li><a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a></li>
+      <li><a href="{{ url_for('feedback.list_feedback') }}"><i class="fas fa-comment-dots"></i> Courses</a></li>
+      <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+    </ul>
+  </aside>
 
   <!-- Main Content -->
-  <div class="main-content">
-    <div class="main-form">
+  <main class="main-content">
+    <section class="main-form">
       <h2>Add Schedule</h2>
 
       <form method="POST">
 
+        <!-- Subject Selection -->
         <label for="subject_id">Subject:</label>
         <select id="subject_id" name="subject_id" required>
           <option value="" disabled selected>Select Subject</option>
           {% for subject in subjects %}
             <option value="{{ subject.subject_id }}">
-              {{ subject.code }} - {{ subject.name }}
-              ({{ subject.year_level }} - {{ subject.section }} - {{ subject.course }})
+              {{ subject.code }} - {{ subject.name }} ({{ subject.year_level }} - {{ subject.section }} - {{ subject.course }})
             </option>
           {% endfor %}
         </select>
 
+        <!-- Instructor Selection -->
         <label for="instructor_id">Instructor:</label>
         <select id="instructor_id" name="instructor_id" required>
           <option value="" disabled selected>Select Instructor</option>
@@ -83,6 +64,7 @@
           {% endfor %}
         </select>
 
+        <!-- Room Selection -->
         <label for="room_id">Room:</label>
         <select id="room_id" name="room_id" required>
           <option value="" disabled selected>Select Room</option>
@@ -93,6 +75,7 @@
           {% endfor %}
         </select>
 
+        <!-- Day and Time -->
         <label for="day_of_week">Day of Week:</label>
         <select id="day_of_week" name="day_of_week" required>
           <option value="" disabled selected>Select Day</option>
@@ -107,18 +90,17 @@
         <label for="end_time">End Time:</label>
         <input id="end_time" type="time" name="end_time" required />
 
-        <button type="submit" class="btn">Add Schedule</button>
-
-        <!-- Cancel Button -->
-        <button type="button"
-                class="btn btn-secondary"
-                onclick="globalThis.location.href='{{ url_for('schedules.list_schedules') }}';">
-          Cancel
-        </button>
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="submit" class="btn">Add Schedule</button>
+          <button type="button" class="btn btn-secondary" onclick="globalThis.location.href='{{ url_for('schedules.list_schedules') }}';">
+            Cancel
+          </button>
+        </div>
 
       </form>
-    </div>
-  </div>
+    </section>
+  </main>
 
 </body>
 </html>

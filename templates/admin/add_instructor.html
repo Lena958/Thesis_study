@@ -4,48 +4,36 @@
   <meta charset="UTF-8">
   <title>Add Instructor</title>
 
+  <!-- Stylesheets -->
   <link rel="stylesheet" href="{{ url_for('static', filename='css/add_instructor.css') }}">
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
-
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet" />
   <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
-  <link
-    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"
-    rel="stylesheet"
-  />
 </head>
 
 <body>
 
   <!-- Topbar -->
-  <div class="topbar">
+  <header class="topbar">
     <h1>College of Computing and Information Sciences</h1>
 
     <div class="topbar-profile">
       {% if instructor_image %}
-        <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}"
-             alt="Profile"
-             class="profile-pic" />
+        <img src="{{ url_for('static', filename='uploads/' + instructor_image) }}" alt="Profile" class="profile-pic" />
       {% else %}
         <i class="fas fa-user-circle profile-icon"></i>
       {% endif %}
 
-      <!-- Logout Button -->
-      <button type="button"
-              class="logout-btn"
-              title="Logout"
-              onclick="openLogoutModal(event)">
+      <button type="button" class="logout-btn" title="Logout" onclick="openLogoutModal(event)">
         <i class="fas fa-sign-out-alt"></i> Logout
       </button>
     </div>
-  </div>
+  </header>
 
   <!-- Sidebar -->
-  <div class="sidebar">
+  <nav class="sidebar">
     <div class="sidebar-user">
-      <img src="{{ url_for('static', filename='images/brand.png') }}"
-           alt="CCISS Logo"
-           class="sidebar-logo">
-
+      <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="sidebar-logo">
       {% if instructor_name %}
         <p><strong>{{ instructor_name }}</strong></p>
       {% else %}
@@ -53,28 +41,23 @@
       {% endif %}
     </div>
 
-    <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-    <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-    <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-    <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-    <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
-    <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-    <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-    <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-    <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
-  </div>
+    <ul class="sidebar-links">
+      <li><a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a></li>
+      <li><a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a></li>
+      <li><a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a></li>
+      <li><a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a></li>
+      <li><a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a></li>
+      <li><a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a></li>
+      <li><a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a></li>
+      <li><a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a></li>
+    </ul>
+  </nav>
 
   <!-- Logout Modal -->
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-
-      <!-- Close Button -->
-      <button type="button"
-              class="close"
-              aria-label="Close logout modal"
-              onclick="closeLogoutModal()">
-        &times;
-      </button>
+      <button type="button" class="close" aria-label="Close logout modal" onclick="closeLogoutModal()">&times;</button>
 
       <h3>Confirm Logout</h3>
       <p>Are you sure you want to logout?</p>
@@ -88,71 +71,77 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <div class="main-form">
+    <section class="main-form">
       <form method="POST">
 
         <h2 class="form-title">Add Instructor Here</h2>
 
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name" required>
+        <!-- Personal Info -->
+        <fieldset>
+          <legend>Personal Information</legend>
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name" required>
 
-        <label for="max_load_units">Max Load Units:</label>
-        <input type="number" id="max_load_units" name="max_load_units" required>
+          <label for="max_load_units">Max Load Units:</label>
+          <input type="number" id="max_load_units" name="max_load_units" required>
 
-        <label for="department">Department:</label>
-        <input list="departments" id="department" name="department">
-        <datalist id="departments">
-          <option value="Computer Science">
-          <option value="Information Technology">
-          <option value="Software Engineering">
-          <option value="Information Systems">
-        </datalist>
+          <label for="department">Department:</label>
+          <input list="departments" id="department" name="department">
+          <datalist id="departments">
+            <option value="Computer Science">
+            <option value="Information Technology">
+            <option value="Software Engineering">
+            <option value="Information Systems">
+          </datalist>
 
-        <label for="program">Program:</label>
-        <input list="programs" id="program" name="program">
-        <datalist id="programs">
-          {% for prog in programs %}
-            <option value="{{ prog }}">
-          {% endfor %}
-        </datalist>
+          <label for="program">Program:</label>
+          <input list="programs" id="program" name="program">
+          <datalist id="programs">
+            {% for prog in programs %}
+              <option value="{{ prog }}">
+            {% endfor %}
+          </datalist>
 
-        <label for="status">Status:</label>
-        <input list="statuses" id="status" name="status">
-        <datalist id="statuses">
-          {% for stat in statuses %}
-            <option value="{{ stat }}">
-          {% endfor %}
-        </datalist>
+          <label for="status">Status:</label>
+          <input list="statuses" id="status" name="status">
+          <datalist id="statuses">
+            {% for stat in statuses %}
+              <option value="{{ stat }}">
+            {% endfor %}
+          </datalist>
+        </fieldset>
 
-        <label for="username">Username:</label>
-        <input type="text" id="username" name="username" required>
+        <!-- Account Info -->
+        <fieldset>
+          <legend>Account Information</legend>
+          <label for="username">Username:</label>
+          <input type="text" id="username" name="username" required>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
+          <label for="password">Password:</label>
+          <input type="password" id="password" name="password" required>
 
-        <label for="role">Role:</label>
-        <select id="role" name="role" required>
-          <option value="instructor">Instructor</option>
-          <option value="admin">Admin</option>
-        </select>
+          <label for="role">Role:</label>
+          <select id="role" name="role" required>
+            <option value="instructor">Instructor</option>
+            <option value="admin">Admin</option>
+          </select>
+        </fieldset>
 
+        <!-- Form Actions -->
         <div class="form-actions">
           <button type="submit" class="btn">Add Instructor</button>
-
-          <!-- Cancel Button -->
-          <button type="button"
-                  class="btn btn-secondary"
-                  onclick="globalThis.location.href='{{ url_for('instructors.list_instructors') }}';">
+          <button type="button" class="btn btn-secondary" onclick="globalThis.location.href='{{ url_for('instructors.list_instructors') }}';">
             Cancel
           </button>
         </div>
 
       </form>
-    </div>
+    </section>
   </main>
 
   <!-- JavaScript -->
   <script>
+    // Logout modal handlers
     function openLogoutModal(event) {
       event.preventDefault();
       document.getElementById('logoutModal').style.display = 'block';
@@ -172,4 +161,3 @@
 
 </body>
 </html>
-

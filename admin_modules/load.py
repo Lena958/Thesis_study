@@ -28,25 +28,24 @@ DB_CONFIG = {
     'database': 'iload'
 }
 
+load_bp = Blueprint('load', __name__, url_prefix='/view')
 
+
+# ------------------------
+# Database Utilities
+# ------------------------
 def get_db_connection():
     """Return a new MySQL database connection using DB_CONFIG."""
     try:
-        conn = mysql.connector.connect(**DB_CONFIG)
-        return conn
+        return mysql.connector.connect(**DB_CONFIG)
     except Error as e:
         print(f"Database connection error: {e}")
         return None
 
 
-def is_admin():
-    """Return True if current session belongs to admin."""
-    return session.get('role') == 'admin'
-
-
 @contextmanager
 def db_cursor(dictionary=False):
-    """Context manager to yield a database cursor and commit/close connection."""
+    """Context manager for a DB cursor with commit/rollback."""
     conn = get_db_connection()
     if not conn:
         yield None
@@ -63,18 +62,27 @@ def db_cursor(dictionary=False):
         conn.close()
 
 
-# ------------------------
-# Blueprint
-# ------------------------
-load_bp = Blueprint('load', __name__, url_prefix='/view')
+def is_admin():
+    """Return True if current session belongs to admin."""
+    return session.get('role') == 'admin'
+
+
+def admin_required(f):
+    """Decorator to restrict route access to admin only."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not is_admin():
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
 
 
 # ------------------------
-# Context processors
+# Context Processor
 # ------------------------
 @load_bp.context_processor
 def inject_instructor_name():
-    """Inject instructor's name and image into templates for sidebar."""
+    """Inject instructor's name and image into templates."""
     if 'user_id' not in session:
         return {"instructor_name": None, "instructor_image": None}
 
@@ -96,16 +104,6 @@ def inject_instructor_name():
 # ------------------------
 # Helpers
 # ------------------------
-def admin_required(f):
-    """Decorator to restrict route access to admin only."""
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not is_admin():
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated
-
-
 def format_time_12hr(time_obj):
     """Convert a time or timedelta object to 12-hour format string."""
     if not time_obj:
@@ -134,13 +132,13 @@ def normalize_day(d):
         return None
     s = str(d).strip().lower()
     map_ = {
-        'm': 'Monday','mon':'Monday','monday':'Monday',
-        't': 'Tuesday','tue':'Tuesday','tues':'Tuesday','tuesday':'Tuesday',
-        'w': 'Wednesday','wed':'Wednesday','wednesday':'Wednesday',
-        'th': 'Thursday','thu':'Thursday','thursday':'Thursday',
-        'f': 'Friday','fri':'Friday','friday':'Friday',
-        'sat':'Saturday','saturday':'Saturday',
-        'sun':'Sunday','sunday':'Sunday'
+        'm': 'Monday', 'mon': 'Monday', 'monday': 'Monday',
+        't': 'Tuesday', 'tue': 'Tuesday', 'tues': 'Tuesday', 'tuesday': 'Tuesday',
+        'w': 'Wednesday', 'wed': 'Wednesday', 'wednesday': 'Wednesday',
+        'th': 'Thursday', 'thu': 'Thursday', 'thursday': 'Thursday',
+        'f': 'Friday', 'fri': 'Friday', 'friday': 'Friday',
+        'sat': 'Saturday', 'saturday': 'Saturday',
+        'sun': 'Sunday', 'sunday': 'Sunday'
     }
     return map_.get(s, s.capitalize())
 
@@ -200,7 +198,7 @@ def insert_schedule_into_grid(grid, sched, days, time_slots):
 
 
 # ------------------------
-# Fetch schedules
+# Fetch Schedules
 # ------------------------
 def fetch_all_schedules(search_query=None):
     """Fetch all approved schedules, optionally filtered by search query."""
@@ -316,4 +314,3 @@ def view_copy():
         grid=grid,
         search_title=prettify_search_title(q) if q else None
     )
-

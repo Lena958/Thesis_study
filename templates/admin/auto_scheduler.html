@@ -13,116 +13,37 @@
 
   <style>
     /* Table & Schedule Styles */
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-    th, td {
-      border: 1px solid #ddd;
-      padding: 0.75rem; /* shorthand */
-    }
-    .conflict-row td {
-      font-weight: bold;
-      border-color: #f5c2c7;
-      background-color: #fef2f2;
-    }
-    .instructor-group {
-      background-color: #f8fafc;
-    }
-    .instructor-name {
-      font-weight: 600;
-      background-color: #e8f0fe;
-      vertical-align: top;
-    }
-    .day-cell {
-      font-weight: 500;
-      vertical-align: top;
-    }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 0.75rem; }
+    .conflict-row td { font-weight: bold; border-color: #f5c2c7; background-color: #fef2f2; }
+    .instructor-group { background-color: #f8fafc; }
+    .instructor-name { font-weight: 600; background-color: #e8f0fe; vertical-align: top; }
+    .day-cell { font-weight: 500; vertical-align: top; }
 
     /* Form Styles */
-    .schedule-form {
-      background: #fff;
-      padding: 1.5rem; /* shorthand */
-      border-radius: 12px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
-    }
-    .form-group {
-      margin-bottom: 1rem;
-    }
-    .form-group label {
-      display: block;
-      font-weight: 500;
-      margin-bottom: 0.5rem;
-    }
-    .form-group input,
-    .form-group select {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    .form-group input:focus,
-    .form-group select:focus {
-      border-color: #3b82f6;
-    }
-    .btn-generate {
-      background-color: #e5e7eb; /* light gray */
-      color: #111827; /* dark text for contrast */
-      padding: 0.5rem 1rem;
-      border-radius: 6px;
-      font-weight: 600;
-      transition: background 0.2s;
-    }
-    .btn-generate:hover {
-      background-color: #2563eb;
-    }
+    .schedule-form { background: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+    .form-group { margin-bottom: 1rem; }
+    .form-group label { display: block; font-weight: 500; margin-bottom: 0.5rem; }
+    .form-group input, .form-group select { width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 6px; outline: none; transition: border-color 0.2s; }
+    .form-group input:focus, .form-group select:focus { border-color: #3b82f6; }
+    .btn-generate { background-color: #e5e7eb; color: #111827; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; transition: background 0.2s; }
+    .btn-generate:hover { background-color: #2563eb; }
 
     /* Modal Styles */
-    .modal-content {
-      background-color: #fff;
-      padding: 1.5rem;
-      border-radius: 12px;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      width: 90%;
-      max-width: 400px;
-      margin: auto;
-    }
-    .modal-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    .btn-modal {
-      padding: 0.4rem 0.8rem;
-      border-radius: 6px;
-      font-weight: 500;
-      cursor: pointer;
-      border: none;
-    }
-    .btn-yes {
-      background-color: #e5e7eb; /* light gray */
-      color: #111827; /* dark text for contrast */
-    }
-    .btn-yes:hover {
-      background-color: #2563eb;
-    }
-    .btn-cancel {
-      background-color: #e5e7eb;
-      color: #111827;
-    }
-    .btn-cancel:hover {
-      background-color: #d1d5db;
-    }
+    .modal-content { background-color: #fff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); width: 90%; max-width: 400px; margin: auto; }
+    .modal-buttons { display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1rem; }
+    .btn-modal { padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 500; cursor: pointer; border: none; }
+    .btn-yes { background-color: #e5e7eb; color: #111827; }
+    .btn-yes:hover { background-color: #2563eb; }
+    .btn-cancel { background-color: #e5e7eb; color: #111827; }
+    .btn-cancel:hover { background-color: #d1d5db; }
   </style>
 </head>
+
 <body class="bg-gray-100 font-sans text-gray-800">
 
   <!-- Topbar -->
-  <div class="topbar flex justify-between items-center p-4 bg-white shadow-md">
+  <header class="topbar flex justify-between items-center p-4 bg-white shadow-md">
     <h1 class="text-lg font-semibold">College of Computing and Information Sciences</h1>
     <div class="flex items-center gap-4">
       {% if instructor_image %}
@@ -134,10 +55,10 @@
         <i class="fas fa-sign-out-alt"></i> Logout
       </button>
     </div>
-  </div>
+  </header>
 
   <!-- Sidebar -->
-  <div class="sidebar fixed left-0 top-0 h-full w-60 bg-white shadow-lg pt-6">
+  <aside class="sidebar fixed left-0 top-0 h-full w-60 bg-white shadow-lg pt-6">
     <div class="flex flex-col items-center mb-6">
       <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="w-20 h-20 mb-2">
       {% if instructor_name %}
@@ -157,7 +78,7 @@
       <a href="{{ url_for('schedules.list_schedules') }}" class="sidebar-link"><i class="fas fa-calendar-alt"></i> Schedules</a>
       <a href="{{ url_for('conflicts.list_conflicts') }}" class="sidebar-link"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
     </nav>
-  </div>
+  </aside>
 
   <!-- Main Content -->
   <main class="ml-60 p-6">
@@ -220,7 +141,7 @@
         </thead>
         <tbody>
           {% if schedules %}
-            {# Keep your table logic here #}
+            {# Table logic remains unchanged #}
           {% else %}
             <tr>
               <td colspan="7" class="text-center py-4">No pending schedules found.</td>
@@ -279,9 +200,7 @@
         form.submit();
       });
 
-      btnCancel.addEventListener('click', function () {
-        confirmModal.close();
-      });
+      btnCancel.addEventListener('click', function () { confirmModal.close(); });
 
       window.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {

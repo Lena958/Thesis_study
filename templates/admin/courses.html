@@ -8,32 +8,10 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/brand.png') }}">
     <style>
-        /* Basic Modal Styles */
-        dialog {
-            border: none;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            max-width: 400px;
-            width: 90%;
-        }
-        dialog::backdrop {
-            background: rgba(0,0,0,0.5);
-            backdrop-filter: blur(2px);
-        }
-        .modal-buttons {
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-        .btn-modal {
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-weight: 500;
-            border: none;
-            cursor: pointer;
-        }
+        dialog { border: none; border-radius: 12px; padding: 1.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.2); max-width: 400px; width: 90%; }
+        dialog::backdrop { background: rgba(0,0,0,0.5); backdrop-filter: blur(2px); }
+        .modal-buttons { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+        .btn-modal { padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; border: none; cursor: pointer; }
         .btn-yes { background-color: #dc2626; color: #fff; }
         .btn-yes:hover { background-color: #b91c1c; }
         .btn-cancel { background-color: #e5e7eb; color: #111827; }
@@ -42,7 +20,7 @@
 </head>
 <body>
     <!-- Topbar -->
-    <div class="topbar flex justify-between items-center p-4 bg-white shadow-md">
+    <header class="topbar flex justify-between items-center p-4 bg-white shadow-md">
         <h1 class="text-lg font-semibold">College of Computing and Information Sciences</h1>
         <div class="flex items-center gap-4">
             {% if instructor_image %}
@@ -54,10 +32,10 @@
                 <i class="fas fa-sign-out-alt" aria-hidden="true"></i> Logout
             </button>
         </div>
-    </div>
+    </header>
 
     <!-- Sidebar -->
-    <div class="sidebar fixed left-0 top-0 h-full w-60 bg-white shadow-lg pt-6">
+    <aside class="sidebar fixed left-0 top-0 h-full w-60 bg-white shadow-lg pt-6">
         <div class="flex flex-col items-center mb-6">
             <img src="{{ url_for('static', filename='images/brand.png') }}" alt="CCISS Logo" class="w-20 h-20 mb-2">
             {% if instructor_name %}
@@ -77,9 +55,9 @@
             <button class="sidebar-link" onclick="location.href='{{ url_for('schedules.list_schedules') }}'"><i class="fas fa-calendar-alt"></i> Schedules</button>
             <button class="sidebar-link" onclick="location.href='{{ url_for('conflicts.list_conflicts') }}'"><i class="fas fa-exclamation-triangle"></i> Conflicts</button>
         </nav>
-    </div>
+    </aside>
 
-    <!-- Logout Dialog -->
+    <!-- Logout Modal -->
     <dialog id="logoutModal" aria-labelledby="logoutTitle" aria-describedby="logoutDesc">
         <div class="modal-content">
             <h3 id="logoutTitle">Confirm Logout</h3>
@@ -91,7 +69,7 @@
         </div>
     </dialog>
 
-    <!-- Delete Dialog -->
+    <!-- Delete Modal -->
     <dialog id="deleteModal" aria-labelledby="deleteTitle" aria-describedby="deleteDesc">
         <div class="modal-content">
             <h3 id="deleteTitle">Confirm Delete</h3>
@@ -125,7 +103,7 @@
           {% endif %}
         {% endwith %}
 
-        <!-- Filter Container -->
+        <!-- Filter Form -->
         <div class="filter-container mb-4">
             <form method="POST" class="filter-form grid grid-cols-1 sm:grid-cols-5 gap-4">
                 <div class="form-group">

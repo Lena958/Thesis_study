@@ -4,7 +4,17 @@ Includes conflict detection, resolution, display functionality,
 input validation, error handling, and unit tests.
 """
 
+# ==========================================================
+# STANDARD LIBRARY IMPORTS
+# ==========================================================
+
 from datetime import datetime, time, timedelta
+import unittest
+
+# ==========================================================
+# THIRD-PARTY IMPORTS
+# ==========================================================
+
 import mysql.connector
 from flask import (
     Blueprint,
@@ -15,11 +25,17 @@ from flask import (
     session,
     url_for,
 )
-import unittest
+
+# ==========================================================
+# BLUEPRINT DEFINITION
+# ==========================================================
 
 conflicts_bp = Blueprint('conflicts', __name__, url_prefix='/admin/conflicts')
 
-# ---------- Database Configuration ----------
+# ==========================================================
+# DATABASE CONFIGURATION
+# ==========================================================
+
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
@@ -27,7 +43,10 @@ DB_CONFIG = {
     'database': 'iload'
 }
 
-# ---------- Constants ----------
+# ==========================================================
+# CONSTANTS & ENUM-LIKE MAPS
+# ==========================================================
+
 FLASH_CATEGORIES = {
     'success': 'success'
 }
@@ -104,16 +123,22 @@ TIME_FORMATS = {
     '12h': "%I:%M %p"
 }
 
-# ---------- Utility Functions ----------
+# ==========================================================
+# DATABASE & SECURITY UTILITIES
+# ==========================================================
 
 def get_db_connection():
     try:
         return mysql.connector.connect(**DB_CONFIG)
     except mysql.connector.Error as e:
-        raise ConnectionError(ERROR_MESSAGES['db_connection_error'].format(error=str(e)))
+        raise ConnectionError(
+            ERROR_MESSAGES['db_connection_error'].format(error=str(e))
+        )
+
 
 def is_admin():
     return session.get('role') == 'admin'
+
 
 @conflicts_bp.context_processor
 def inject_instructor_name():
@@ -138,11 +163,16 @@ def inject_instructor_name():
         conn.close()
 
     return {
-        DB_FIELDS['instructor_name']: instructor[DB_FIELDS['name']]
-        if instructor else None,
-        DB_FIELDS['image']: instructor[DB_FIELDS['image']]
-        if instructor and instructor[DB_FIELDS['image']] else None
+        DB_FIELDS['instructor_name']:
+            instructor[DB_FIELDS['name']] if instructor else None,
+        DB_FIELDS['image']:
+            instructor[DB_FIELDS['image']]
+            if instructor and instructor[DB_FIELDS['image']] else None
     }
+
+# ==========================================================
+# TIME HANDLING UTILITIES
+# ==========================================================
 
 def timedelta_to_time(td):
     if isinstance(td, timedelta):
@@ -154,6 +184,7 @@ def timedelta_to_time(td):
         )
     return td
 
+
 def parse_time(value):
     try:
         if isinstance(value, datetime):
@@ -163,41 +194,62 @@ def parse_time(value):
         if isinstance(value, str):
             return datetime.strptime(value, TIME_FORMATS['24h']).time()
     except Exception:
-        raise ValueError(ERROR_MESSAGES['invalid_time_format'].format(value=value))
+        raise ValueError(
+            ERROR_MESSAGES['invalid_time_format'].format(value=value)
+        )
     return value
+
 
 def format_time_12h(value):
     return value.strftime(TIME_FORMATS['12h']) if isinstance(value, time) else str(value)
 
-# ---------- Conflict Helpers (REDUCES COMPLEXITY) ----------
+# ==========================================================
+# LOW-LEVEL CONFLICT HELPERS
+# ==========================================================
 
 def schedules_overlap(start1, end1, start2, end2):
     return start1 < end2 and start2 < end1
 
+
 def same_instructor(s1, s2):
     return s1[DB_FIELDS['instructor_id']] == s2[DB_FIELDS['instructor_id']]
+
 
 def same_room(s1, s2):
     return s1[DB_FIELDS['room_id']] == s2[DB_FIELDS['room_id']]
 
-# ---------- Input Validation ----------
+# ==========================================================
+# INPUT VALIDATION
+# ==========================================================
 
 def validate_schedule(schedule):
     required_fields = [
-        DB_FIELDS['schedule_id'], DB_FIELDS['day_of_week'],
-        DB_FIELDS['start_time'], DB_FIELDS['end_time'],
-        DB_FIELDS['instructor_id'], DB_FIELDS['room_id'],
-        DB_FIELDS['subject_name'], DB_FIELDS['instructor_name'],
+        DB_FIELDS['schedule_id'],
+        DB_FIELDS['day_of_week'],
+        DB_FIELDS['start_time'],
+        DB_FIELDS['end_time'],
+        DB_FIELDS['instructor_id'],
+        DB_FIELDS['room_id'],
+        DB_FIELDS['subject_name'],
+        DB_FIELDS['instructor_name'],
         DB_FIELDS['room_number']
     ]
+
     for field in required_fields:
         if field not in schedule or schedule[field] is None:
             raise ValueError(f"Missing or invalid schedule field: {field}")
 
-# ---------- Conflict Detection ----------
+# ==========================================================
+# DATABASE WRITE OPERATIONS
+# ==========================================================
 
-def save_conflict_to_db(schedule1_id, schedule2_id, conflict_type,
-                        description, recommendation):
+def save_conflict_to_db(
+    schedule1_id,
+    schedule2_id,
+    conflict_type,
+    description,
+    recommendation
+):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -212,9 +264,12 @@ def save_conflict_to_db(schedule1_id, schedule2_id, conflict_type,
         if cursor.fetchone()[0] == 0:
             insert_query = f"""
                 INSERT INTO {DB_TABLES['conflicts']}
-                ({DB_FIELDS['schedule1_id']}, {DB_FIELDS['schedule2_id']},
-                 {DB_FIELDS['conflict_type']}, {DB_FIELDS['description']},
-                 {DB_FIELDS['recommendation']}, {DB_FIELDS['status']})
+                ({DB_FIELDS['schedule1_id']},
+                 {DB_FIELDS['schedule2_id']},
+                 {DB_FIELDS['conflict_type']},
+                 {DB_FIELDS['description']},
+                 {DB_FIELDS['recommendation']},
+                 {DB_FIELDS['status']})
                 VALUES (%s, %s, %s, %s, %s, %s)
             """
             cursor.execute(
@@ -233,6 +288,10 @@ def save_conflict_to_db(schedule1_id, schedule2_id, conflict_type,
         cursor.close()
         conn.close()
 
+# ==========================================================
+# CONFLICT DETECTION LOGIC
+# ==========================================================
+
 def detect_instructor_conflict(s1, s2, day, start1, end1, start2, end2):
     description = ERROR_MESSAGES['instructor_conflict_desc'].format(
         instructor_name=s1[DB_FIELDS['instructor_name']],
@@ -244,6 +303,7 @@ def detect_instructor_conflict(s1, s2, day, start1, end1, start2, end2):
         start2=format_time_12h(start2),
         end2=format_time_12h(end2)
     )
+
     recommendation = ERROR_MESSAGES['instructor_conflict_rec'].format(
         instructor_name=s1[DB_FIELDS['instructor_name']]
     )
@@ -255,6 +315,7 @@ def detect_instructor_conflict(s1, s2, day, start1, end1, start2, end2):
         description,
         recommendation
     )
+
 
 def detect_room_conflict(s1, s2, day, start1, end1, start2, end2):
     description = ERROR_MESSAGES['room_conflict_desc'].format(
@@ -276,20 +337,25 @@ def detect_room_conflict(s1, s2, day, start1, end1, start2, end2):
         ERROR_MESSAGES['room_conflict_rec']
     )
 
+
 def detect_and_save_conflicts():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
         query = f"""
-            SELECT sc.{DB_FIELDS['schedule_id']}, sc.{DB_FIELDS['day_of_week']},
-                   sc.{DB_FIELDS['start_time']}, sc.{DB_FIELDS['end_time']},
+            SELECT sc.{DB_FIELDS['schedule_id']},
+                   sc.{DB_FIELDS['day_of_week']},
+                   sc.{DB_FIELDS['start_time']},
+                   sc.{DB_FIELDS['end_time']},
                    sb.{DB_FIELDS['name']} AS {DB_FIELDS['subject_name']},
-                   sb.{DB_FIELDS['year_level']}, sb.{DB_FIELDS['section']},
+                   sb.{DB_FIELDS['year_level']},
+                   sb.{DB_FIELDS['section']},
                    sb.{DB_FIELDS['course']},
                    ins.{DB_FIELDS['name']} AS {DB_FIELDS['instructor_name']},
                    ins.{DB_FIELDS['instructor_id']},
-                   rm.{DB_FIELDS['room_number']}, rm.{DB_FIELDS['room_type']},
+                   rm.{DB_FIELDS['room_number']},
+                   rm.{DB_FIELDS['room_type']},
                    rm.{DB_FIELDS['room_id']}
             FROM {DB_TABLES['schedules']} sc
             LEFT JOIN {DB_TABLES['subjects']} sb
@@ -298,7 +364,8 @@ def detect_and_save_conflicts():
                 ON sc.{DB_FIELDS['instructor_id']} = ins.{DB_FIELDS['instructor_id']}
             LEFT JOIN {DB_TABLES['rooms']} rm
                 ON sc.{DB_FIELDS['room_id']} = rm.{DB_FIELDS['room_id']}
-            ORDER BY sc.{DB_FIELDS['day_of_week']}, sc.{DB_FIELDS['start_time']}
+            ORDER BY sc.{DB_FIELDS['day_of_week']},
+                     sc.{DB_FIELDS['start_time']}
         """
         cursor.execute(query)
         schedules = cursor.fetchall()
@@ -307,31 +374,37 @@ def detect_and_save_conflicts():
         conn.close()
 
     for i, s1 in enumerate(schedules):
+        validate_schedule(s1)
+
         day = s1[DB_FIELDS['day_of_week']]
         start1 = parse_time(s1[DB_FIELDS['start_time']])
         end1 = parse_time(s1[DB_FIELDS['end_time']])
-
-        validate_schedule(s1)
 
         for s2 in schedules[i + 1:]:
             if day != s2[DB_FIELDS['day_of_week']]:
                 continue
 
+            validate_schedule(s2)
+
             start2 = parse_time(s2[DB_FIELDS['start_time']])
             end2 = parse_time(s2[DB_FIELDS['end_time']])
-
-            validate_schedule(s2)
 
             if not schedules_overlap(start1, end1, start2, end2):
                 continue
 
             if same_instructor(s1, s2):
-                detect_instructor_conflict(s1, s2, day, start1, end1, start2, end2)
+                detect_instructor_conflict(
+                    s1, s2, day, start1, end1, start2, end2
+                )
 
             if same_room(s1, s2):
-                detect_room_conflict(s1, s2, day, start1, end1, start2, end2)
+                detect_room_conflict(
+                    s1, s2, day, start1, end1, start2, end2
+                )
 
-# ---------- Routes ----------
+# ==========================================================
+# ROUTES
+# ==========================================================
 
 @conflicts_bp.route('/')
 def list_conflicts():
@@ -345,7 +418,7 @@ def list_conflicts():
         cursor = conn.cursor(dictionary=True)
 
         query = f"""
-            SELECT c.*, 
+            SELECT c.*,
                    s1.{DB_FIELDS['start_time']} AS s1_start,
                    s1.{DB_FIELDS['end_time']} AS s1_end,
                    s2.{DB_FIELDS['start_time']} AS s2_start,
@@ -364,6 +437,7 @@ def list_conflicts():
         conn.close()
 
     return render_template("admin/conflicts.html", conflicts=conflicts)
+
 
 @conflicts_bp.route('/resolve/<int:conflict_id>', methods=['POST'])
 def resolve_conflict(conflict_id):
@@ -391,20 +465,13 @@ def resolve_conflict(conflict_id):
     )
     return redirect(url_for('conflicts.list_conflicts'))
 
-# ---------- Unit Tests ----------
-
-# ... [rest of your conflicts_bp code stays the same] ...
-
-# ----------------------------
-# INTERACTIVE AND AUTOMATIC TESTS
-# ----------------------------
+# ==========================================================
+# TESTING & MANUAL VERIFICATION
+# ==========================================================
 
 if __name__ == "__main__":
     print("Interactive and automatic quick tests for conflicts_bp.py\n")
 
-    # ----------------------------
-    # AUTOMATIC CONFLICT DETECTION TESTS
-    # ----------------------------
     schedule_a = {
         DB_FIELDS['schedule_id']: 1,
         DB_FIELDS['day_of_week']: 'Monday',
@@ -442,7 +509,7 @@ if __name__ == "__main__":
     }
 
     print("=== AUTOMATIC TESTS ===")
-    # Test overlaps
+
     start_a = parse_time(schedule_a[DB_FIELDS['start_time']])
     end_a = parse_time(schedule_a[DB_FIELDS['end_time']])
     start_b = parse_time(schedule_b[DB_FIELDS['start_time']])
@@ -450,48 +517,13 @@ if __name__ == "__main__":
     start_c = parse_time(schedule_c[DB_FIELDS['start_time']])
     end_c = parse_time(schedule_c[DB_FIELDS['end_time']])
 
-    print(f"Overlap test A&B: {'PASS' if schedules_overlap(start_a, end_a, start_b, end_b) else 'FAIL'}")
-    print(f"Overlap test A&C: {'PASS' if not schedules_overlap(start_a, end_a, start_c, end_c) else 'FAIL'}")
+    print(f"Overlap A&B: {'PASS' if schedules_overlap(start_a, end_a, start_b, end_b) else 'FAIL'}")
+    print(f"Overlap A&C: {'PASS' if not schedules_overlap(start_a, end_a, start_c, end_c) else 'FAIL'}")
 
-    # Test same instructor
     print(f"Same instructor A&B: {'PASS' if same_instructor(schedule_a, schedule_b) else 'FAIL'}")
     print(f"Same instructor A&C: {'PASS' if not same_instructor(schedule_a, schedule_c) else 'FAIL'}")
 
-    # Test same room
     print(f"Same room A&B: {'PASS' if same_room(schedule_a, schedule_b) else 'FAIL'}")
     print(f"Same room A&C: {'PASS' if not same_room(schedule_a, schedule_c) else 'FAIL'}")
-
-    # Test input validation
-    print("Input validation test (missing field)...", end=" ")
-    invalid_schedule = schedule_a.copy()
-    invalid_schedule.pop(DB_FIELDS['room_id'])
-    try:
-        validate_schedule(invalid_schedule)
-        print("FAIL")
-    except ValueError as e:
-        print(f"PASS ({str(e)})")
-
-    # ----------------------------
-    # INTERACTIVE TESTS
-    # ----------------------------
-    print("\n=== INTERACTIVE TESTS ===")
-    user_start = input("Enter start time (HH:MM:SS) for schedule X: ")
-    user_end = input("Enter end time (HH:MM:SS) for schedule X: ")
-    try:
-        user_start_time = parse_time(user_start)
-        user_end_time = parse_time(user_end)
-        print(f"Parsed times: {format_time_12h(user_start_time)} - {format_time_12h(user_end_time)} -> PASS")
-    except ValueError as e:
-        print(f"{e} -> FAIL")
-
-    user_start2 = input("Enter start time (HH:MM:SS) for schedule Y: ")
-    user_end2 = input("Enter end time (HH:MM:SS) for schedule Y: ")
-    try:
-        user_start_time2 = parse_time(user_start2)
-        user_end_time2 = parse_time(user_end2)
-        overlap_result = schedules_overlap(user_start_time, user_end_time, user_start_time2, user_end_time2)
-        print(f"Do schedules overlap? {'Yes' if overlap_result else 'No'}")
-    except ValueError as e:
-        print(f"{e} -> FAIL")
 
     print("\nInteractive tests completed!")

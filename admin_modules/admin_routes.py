@@ -3,9 +3,17 @@ Admin blueprint for handling administrator profile management.
 Includes profile viewing, updating, and image upload functionality.
 """
 
+# ==========================================================
+# STANDARD LIBRARY IMPORTS
+# ==========================================================
+
 import re
 import logging
 from typing import Optional, Dict, Any, Tuple
+
+# ==========================================================
+# THIRD-PARTY IMPORTS
+# ==========================================================
 
 import mysql.connector
 from flask import (
@@ -15,7 +23,7 @@ from flask import (
 from werkzeug.security import generate_password_hash, check_password_hash
 
 # ==========================================================
-# CONFIGURATION
+# APPLICATION CONFIGURATION
 # ==========================================================
 
 DB_CONFIG = {
@@ -61,15 +69,19 @@ SQL_QUERIES = {
 
 VALIDATION_PATTERNS = {
     'name': re.compile(r"^[A-Za-z\s\-\.']{1,100}$"),
-    'username': re.compile(r'^\w{3,50}$'),  # changed [A-Za-z0-9_] to \w
+    'username': re.compile(r'^\w{3,50}$'),
     'department': re.compile(r'^[A-Za-z0-9\s\-\.&,]{1,100}$')
 }
+
+# ==========================================================
+# LOGGING SETUP
+# ==========================================================
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ==========================================================
-# HELPERS
+# INPUT SANITIZATION & VALIDATION HELPERS
 # ==========================================================
 
 def sanitize_input(value: Optional[str], value_type: str = 'string') -> Optional[str]:
@@ -100,13 +112,35 @@ def validate_load_units(units: Optional[str]) -> Optional[int]:
         return None
 
 
+def validate_password_strength(password: str) -> Tuple[bool, str]:
+    """Validate password complexity."""
+    checks = [
+        (len(password) >= PASSWORD_MIN_LENGTH,
+         ERROR_MESSAGES['password_too_short'].format(PASSWORD_MIN_LENGTH)),
+        (re.search(r'[A-Z]', password),
+         ERROR_MESSAGES['password_missing_uppercase']),
+        (re.search(r'[a-z]', password),
+         ERROR_MESSAGES['password_missing_lowercase']),
+        (re.search(r'\d', password),
+         ERROR_MESSAGES['password_missing_number']),
+        (re.search(r'[!@#$%^&*(),.?":{}|<>]', password),
+         ERROR_MESSAGES['password_missing_special']),
+    ]
+
+    errors = [msg for passed, msg in checks if not passed]
+    return not errors, ' '.join(errors)
+
+# ==========================================================
+# DATABASE ACCESS HELPERS
+# ==========================================================
+
 def safe_db_operation(operation):
     """Safely execute DB operation."""
     connection = None
     cursor = None
     try:
         connection = mysql.connector.connect(**DB_CONFIG)
-        cursor = connection.cursor()  # removed dictionary=True
+        cursor = connection.cursor()
         result = operation(cursor)
         connection.commit()
         return result
@@ -130,27 +164,8 @@ def fetchone_dict(cursor):
     columns = [col[0] for col in cursor.description]
     return dict(zip(columns, row))
 
-
-def validate_password_strength(password: str) -> Tuple[bool, str]:
-    """Validate password complexity."""
-    checks = [
-        (len(password) >= PASSWORD_MIN_LENGTH,
-         ERROR_MESSAGES['password_too_short'].format(PASSWORD_MIN_LENGTH)),
-        (re.search(r'[A-Z]', password),
-         ERROR_MESSAGES['password_missing_uppercase']),
-        (re.search(r'[a-z]', password),
-         ERROR_MESSAGES['password_missing_lowercase']),
-        (re.search(r'\d', password),
-         ERROR_MESSAGES['password_missing_number']),
-        (re.search(r'[!@#$%^&*(),.?":{}|<>]', password),
-         ERROR_MESSAGES['password_missing_special']),
-    ]
-
-    errors = [msg for passed, msg in checks if not passed]
-    return not errors, ' '.join(errors)
-
 # ==========================================================
-# PASSWORD PROCESSING
+# PASSWORD CHANGE INTERNAL VALIDATION
 # ==========================================================
 
 def _validate_password_inputs(
@@ -182,6 +197,9 @@ def _validate_new_password(
         return ERROR_MESSAGES['password_error'].format(message)
     return None
 
+# ==========================================================
+# PASSWORD CHANGE PROCESSING
+# ==========================================================
 
 def process_password_change(
     username: str,
@@ -203,7 +221,7 @@ def process_password_change(
 
     def operation(cursor):
         cursor.execute(SQL_QUERIES['select_password'], (sanitized_username,))
-        user = fetchone_dict(cursor)  # fetch as dict
+        user = fetchone_dict(cursor)
         if not user:
             return None, ERROR_MESSAGES['user_not_found']
 
@@ -225,7 +243,7 @@ def process_password_change(
         return None, ERROR_MESSAGES['general_error']
 
 # ==========================================================
-# FORM COLLECTION
+# FORM DATA COLLECTION & VALIDATION
 # ==========================================================
 
 def _collect_text(
@@ -291,21 +309,21 @@ def collect_form_data(username: str) -> Tuple[Dict[str, Any], Optional[str]]:
     return update_data, None
 
 # ==========================================================
-# TESTING
+# LOCAL TESTING & MANUAL VERIFICATION
 # ==========================================================
 
 if __name__ == "__main__":
     print("Interactive and automatic quick tests for admin_routes.py\n")
 
-    # ----------------------------
-    # SANITIZE INPUT TESTS
-    # ----------------------------
     test_names = ["John Doe", "Anne-Marie O'Neill", "Invalid123", ""]
     for name in test_names:
         result = sanitize_input(name, "name")
         print(f"Name test: '{name}' -> {result} -> {'PASS' if result else 'FAIL'}")
 
-    test_usernames = ["john_doe", "user123", "Invalid User!", "a", "this_is_a_very_long_username_exceeding_fifty_chars_123"]
+    test_usernames = [
+        "john_doe", "user123", "Invalid User!", "a",
+        "this_is_a_very_long_username_exceeding_fifty_chars_123"
+    ]
     for username in test_usernames:
         result = sanitize_input(username, "username")
         print(f"Username test: '{username}' -> {result} -> {'PASS' if result else 'FAIL'}")
@@ -315,25 +333,19 @@ if __name__ == "__main__":
         result = sanitize_input(dept, "department")
         print(f"Department test: '{dept}' -> {result} -> {'PASS' if result else 'FAIL'}")
 
-    # ----------------------------
-    # PASSWORD STRENGTH TESTS
-    # ----------------------------
-    test_passwords = ["Abc123!@", "weakpass", "NoNumber!", "noupper1!", "NOLOWER1!", "Short1!", "ValidPass1!"]
+    test_passwords = [
+        "Abc123!@", "weakpass", "NoNumber!", "noupper1!",
+        "NOLOWER1!", "Short1!", "ValidPass1!"
+    ]
     for pw in test_passwords:
         valid, message = validate_password_strength(pw)
         print(f"Password test: '{pw}' -> Valid: {valid}, Message: {message} -> {'PASS' if valid else 'FAIL'}")
 
-    # ----------------------------
-    # LOAD UNITS TESTS
-    # ----------------------------
     test_load_units = ["50", "-5", "200", "0", "100", "abc"]
     for units in test_load_units:
         result = validate_load_units(units)
         print(f"Load units test: '{units}' -> {result} -> {'PASS' if result is not None else 'FAIL'}")
 
-    # ----------------------------
-    # INTERACTIVE TESTS
-    # ----------------------------
     print("\nNow you can try interactive input tests:")
 
     name_input = input("Enter a name to test sanitize_input: ")

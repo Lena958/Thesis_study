@@ -15,16 +15,16 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Styles unchanged -->
+  <!-- Inline styles (unchanged) -->
   <style>
-    /* (styles unchanged – omitted here for brevity, same as your original) */
+    /* (styles unchanged – omitted here for brevity) */
   </style>
 </head>
 
 <body class="bg-gray-100">
 
   <!-- Topbar -->
-  <div class="topbar">
+  <header class="topbar">
     <h1>College of Computing and Information Sciences</h1>
 
     <div class="topbar-profile">
@@ -36,7 +36,6 @@
         <i class="fas fa-user-circle profile-icon"></i>
       {% endif %}
 
-      <!-- Logout Button -->
       <button type="button"
               class="logout-btn"
               title="Logout"
@@ -44,10 +43,10 @@
         <i class="fas fa-sign-out-alt"></i> Logout
       </button>
     </div>
-  </div>
+  </header>
 
   <!-- Sidebar -->
-  <div class="sidebar">
+  <aside class="sidebar">
     <div class="sidebar-user">
       <img src="{{ url_for('static', filename='images/brand.png') }}"
            alt="CCISS Logo"
@@ -60,26 +59,27 @@
       {% endif %}
     </div>
 
-    <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-    <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
-    <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
-    <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
-    <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
-    <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
-    <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
-    <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
-    <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
-  </div>
+    <nav class="sidebar-links">
+      <a href="{{ url_for('dashboard.admin_dashboard') }}"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+      <a href="{{ url_for('admin.profile') }}"><i class="fas fa-user"></i> Profile</a>
+      <a href="{{ url_for('instructors.list_instructors') }}"><i class="fas fa-chalkboard-teacher"></i> Instructors</a>
+      <a href="{{ url_for('courses.list_courses') }}"><i class="fas fa-book"></i> Courses</a>
+      <a href="{{ url_for('rooms.list_rooms') }}"><i class="fas fa-door-open"></i> Rooms</a>
+      <a href="{{ url_for('subjects.list_subjects') }}"><i class="fas fa-book"></i> CCISS Loader</a>
+      <a href="{{ url_for('auto_scheduler.auto_scheduler_home') }}"><i class="fas fa-cogs"></i> Auto-Scheduler</a>
+      <a href="{{ url_for('schedules.list_schedules') }}"><i class="fas fa-calendar-alt"></i> Schedules</a>
+      <a href="{{ url_for('conflicts.list_conflicts') }}"><i class="fas fa-exclamation-triangle"></i> Conflicts</a>
+    </nav>
+  </aside>
 
   <!-- Main Content -->
-  <div class="main-content">
-    <!-- (dashboard content unchanged – stats, charts, instructors, conflicts) -->
-  </div>
+  <main class="main-content">
+    <!-- Dashboard content unchanged: stats, charts, instructors, conflicts -->
+  </main>
 
   <!-- Logout Modal -->
   <div id="logoutModal" class="modal">
     <div class="modal-content">
-
       <button type="button"
               class="close"
               aria-label="Close logout modal"
@@ -100,7 +100,7 @@
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-  <!-- Charts (unchanged) -->
+  <!-- Charts initialization -->
   <script>
     const roomLabels = {{ room_usage | map(attribute='room_number') | list | tojson }};
     const roomData = {{ room_usage | map(attribute='schedules_count') | list | tojson }};
