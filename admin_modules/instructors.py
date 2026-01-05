@@ -299,34 +299,56 @@ def delete_instructor(instructor_id):
 
 
 # ==================================================
-# 9. QUICK AUTOMATIC AND INTERACTIVE TESTS
+# 9. QUICK AUTOMATIC TESTS – FULL MATCH & EDGE CASES
 # ==================================================
-if __name__ == "__main__":
-    print("Interactive and automatic quick tests for instructors_bp.py\n")
 
+if __name__ == "__main__":
+    print("=== Automatic Full-Match Validation Tests for instructors_bp.py ===\n")
+
+    # ----------------------------
+    # FULL-MATCH & EDGE CASE TESTS
+    # ----------------------------
     test_instructors = [
-        {"name": "Alice Johnson", "program": "Math", "loads": 3, "status": "active"},
-        {"name": "", "program": "Science", "loads": 2, "status": "active"},
-        {"name": "Bob Smith", "program": "", "loads": 0, "status": "inactive"},
-        {"name": "Carol Lee", "program": "History", "loads": 5, "status": "active"},
+        # ✅ Fully valid
+        {"name": "Alice Johnson", "program": "Math", "loads": 3, "status": "active", "expected": True},
+        {"name": "Bob Smith", "program": "Science", "loads": 0, "status": "inactive", "expected": True},
+        # ❌ Empty name
+        {"name": "", "program": "History", "loads": 2, "status": "active", "expected": False},
+        # ❌ Empty program
+        {"name": "Carol Lee", "program": "", "loads": 1, "status": "active", "expected": False},
+        # ❌ Negative load
+        {"name": "David Kim", "program": "Physics", "loads": -1, "status": "active", "expected": False},
+        # ❌ Invalid status
+        {"name": "Eve Miller", "program": "Chemistry", "loads": 2, "status": "pending", "expected": False},
+        # ❌ Leading/trailing whitespace in name or program
+        {"name": " Frank Wright ", "program": "Biology", "loads": 2, "status": "active", "expected": False},
+        {"name": "Grace Hall", "program": "  Art  ", "loads": 1, "status": "active", "expected": False},
+        # ✅ Edge case: zero loads
+        {"name": "Henry Ford", "program": "Engineering", "loads": 0, "status": "active", "expected": True},
+        # ✅ Edge case: large loads
+        {"name": "Ivy Chen", "program": "Computer Science", "loads": 50, "status": "active", "expected": True},
     ]
 
     valid_statuses = {"active", "inactive"}
 
-    for inst in test_instructors:
-        name_valid = bool(inst["name"].strip())
-        program_valid = bool(inst["program"].strip())
+    print("Running full-match instructor validation tests...\n")
+    for index, inst in enumerate(test_instructors, start=1):
+        # Full-match checks
+        name_valid = bool(inst["name"].strip()) and inst["name"].strip() == inst["name"]
+        program_valid = bool(inst["program"].strip()) and inst["program"].strip() == inst["program"]
         loads_valid = isinstance(inst["loads"], int) and inst["loads"] >= 0
         status_valid = inst["status"] in valid_statuses
 
         all_valid = name_valid and program_valid and loads_valid and status_valid
+        passed = all_valid == inst["expected"]
+
         print(
-            f"Instructor test '{inst['name']}' -> "
-            f"{'PASS' if all_valid else 'FAIL'} "
-            f"(Name: {'OK' if name_valid else 'FAIL'}, "
+            f"Instructor test #{index} ('{inst['name']}'): "
+            f"{'PASS' if passed else 'FAIL'} | "
+            f"Name: {'OK' if name_valid else 'FAIL'}, "
             f"Program: {'OK' if program_valid else 'FAIL'}, "
             f"Loads: {'OK' if loads_valid else 'FAIL'}, "
-            f"Status: {'OK' if status_valid else 'FAIL'})"
+            f"Status: {'OK' if status_valid else 'FAIL'}"
         )
 
-    print("\nAll tests completed.")
+    print("\n=== All instructor validation tests completed ===")

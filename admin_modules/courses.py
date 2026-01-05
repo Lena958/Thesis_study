@@ -262,89 +262,120 @@ def delete_course(course_id):
         flash(f"❌ Database error deleting course: {e}", "danger")
 
     return redirect(url_for(COURSES_LIST_ROUTE))
-# ... [rest of your courses_bp code stays the same] ...
 
 # ==================================================
-# 7. QUICK AUTOMATIC AND INTERACTIVE TESTS
+# 7. QUICK AUTOMATIC TESTS – FULL MATCH & EDGE CASES
 # ==================================================
 
 if __name__ == "__main__":
-    print("Interactive and automatic quick tests for courses_bp.py\n")
+    print("=== Automatic Full-Match Validation Tests for courses_bp.py ===")
 
-# ----------------------------
-# AUTOMATIC INPUT VALIDATION TESTS
-# ----------------------------
+    REQUIRED_FIELDS = (
+        "course_code",
+        "course_name",
+        "program",
+        "school_year",
+        "semester",
+        "course_type",
+    )
+
+    VALID_SEMESTERS = {"1", "2"}
+    VALID_COURSE_TYPES = {"Major", "GEC", "GEE"}
+
+    # ----------------------------
+    # FULL-MATCH & EDGE CASE TESTS
+    # ----------------------------
     test_courses = [
+        # ✅ Fully valid
         {
-            'course_code': 'CS101',
-            'course_name': 'Intro to CS',
-            'program': 'Computer Science',
-            'school_year': '2025-2026',
-            'semester': '1',
-            'course_type': 'Major'
+            "course_code": "CS101",
+            "course_name": "Introduction to Computer Science",
+            "program": "Computer Science",
+            "school_year": "2025-2026",
+            "semester": "1",
+            "course_type": "Major",
+            "expected": True,
         },
+        # ❌ Invalid course code (symbols)
         {
-            'course_code': '',  # Missing field
-            'course_name': 'Data Structures',
-            'program': 'Computer Science',
-            'school_year': '2025-2026',
-            'semester': '1',
-            'course_type': 'Major'
+            "course_code": "CS101!!",
+            "course_name": "Data Structures",
+            "school_year": "2025-2026",
+            "semester": "1",
+            "course_type": "Major",
+            "expected": False,
         },
+        # ❌ Empty course name
         {
-            'course_code': 'MATH200',
-            'course_name': '',
-            'program': 'Math',
-            'school_year': '2025-2026',
-            'semester': '2',
-            'course_type': 'GEC'
-        }
+            "course_code": "CS102",
+            "course_name": "",
+            "school_year": "2025-2026",
+            "semester": "1",
+            "course_type": "Major",
+            "expected": False,
+        },
+        # ❌ Invalid school year format
+        {
+            "course_code": "MATH200",
+            "course_name": "Linear Algebra",
+            "program": "Mathematics",
+            "school_year": "2025/2026",
+            "semester": "2",
+            "course_type": "GEC",
+            "expected": False,
+        },
+        # ❌ Invalid semester
+        {
+            "course_code": "ENG101",
+            "course_name": "English Composition",
+            "program": "English",
+            "school_year": "2025-2026",
+            "semester": "3",
+            "course_type": "GEE",
+            "expected": False,
+        },
+        # ❌ Invalid course type
+        {
+            "course_code": "HIST101",
+            "course_name": "World History",
+            "program": "History",
+            "school_year": "2025-2026",
+            "semester": "1",
+            "course_type": "Elective",
+            "expected": False,
+        },
+        # ❌ Leading/trailing whitespace (full-match failure)
+        {
+            "course_code": " CS103 ",
+            "course_name": "Algorithms",
+            "program": "Computer Science",
+            "school_year": "2025-2026",
+            "semester": "1",
+            "course_type": "Major",
+            "expected": False,
+        },
     ]
 
-    for i, course in enumerate(test_courses, start=1):
-        print(f"Test course #{i}: ", end='')
-        if all(course.values()):
-            print("PASS")
-        else:
-            print(f"FAIL (missing fields: {[k for k, v in course.items() if not v]})")
+    print("\nRunning full-match course validation tests...")
+    for index, course in enumerate(test_courses, start=1):
+        missing_fields = [
+            field for field in REQUIRED_FIELDS if not course.get(field)
+        ]
 
-    # ----------------------------
-    # AUTOMATIC SAVE/RETRIEVE TEST (mocked, no DB commit)
-    # ----------------------------
-    try:
-        print("\nTesting fetch_distinct_values and fetch_courses...")
-        programs = fetch_distinct_values('program')
-        print(f"Distinct programs fetched: {programs} -> PASS")
-        courses = fetch_courses()
-        print(f"Total courses fetched: {len(courses)} -> PASS")
-    except Exception as e:
-        print(f"FAIL ({e})")
+        is_valid = (
+            not missing_fields
+            and course["semester"] in VALID_SEMESTERS
+            and course["course_type"] in VALID_COURSE_TYPES
+            and course["school_year"].count("-") == 1
+            and course["school_year"].replace("-", "").isdigit()
+            and course["course_code"].strip() == course["course_code"]
+        )
 
-    # ----------------------------
-    # INTERACTIVE TESTS
-    # ----------------------------
-    print("\n=== INTERACTIVE TESTS ===")
-    course_code = input("Enter course code to test validation: ").strip()
-    course_name = input("Enter course name to test validation: ").strip()
-    program = input("Enter program to test validation: ").strip()
-    school_year = input("Enter school year to test validation: ").strip()
-    semester = input("Enter semester to test validation: ").strip()
-    course_type = input("Enter course type (Major/GEC/GEE) to test validation: ").strip()
+        passed = is_valid == course["expected"]
 
-    test_course = {
-        'course_code': course_code,
-        'course_name': course_name,
-        'program': program,
-        'school_year': school_year,
-        'semester': semester,
-        'course_type': course_type
-    }
+        print(
+            f"Course test #{index}: "
+            f"{'PASS' if passed else 'FAIL'}"
+        )
 
-    if all(test_course.values()):
-        print(f"Validation PASS -> {test_course}")
-    else:
-        missing = [k for k, v in test_course.items() if not v]
-        print(f"Validation FAIL, missing fields: {missing}")
-
-    print("\nInteractive tests completed!")
-
+    print("\n=== All course validation tests completed ===")

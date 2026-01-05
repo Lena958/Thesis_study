@@ -244,36 +244,85 @@ def validate_image_filename(filename):
         return False
     return allowed_file(filename)
 
-# ------------------------
-# Test Cases
-# ------------------------
+# ==================================================
+# ROOMS ROUTES – FULL MATCH & EDGE CASE TESTS
+# ==================================================
+
+def run_edge_case_tests():
+    """Automatic full-match and edge-case validation tests for rooms_routes.py"""
+    print("=== Automatic Full-Match & Edge-Case Tests ===\n")
+
+    edge_test_cases = {
+        "room_number": [
+            "A101",      # valid
+            "LAB-2",     # valid
+            "203",       # valid
+            "Room#1",    # invalid character
+            "",          # empty
+            "   ",       # whitespace only
+            "A"*51       # excessive length
+        ],
+        "room_type": [
+            "Lecture",       # valid
+            "Computer Lab",  # valid
+            "Lab123",        # contains numbers
+            "",              # empty
+            "A"*101,         # excessive length
+        ],
+        "program_name": [
+            "Computer Science",      # valid
+            "IT & AI",               # valid with ampersand
+            "Prog@123",              # invalid characters
+            "",                      # empty
+            "A"*101,                 # excessive length
+        ],
+        "image_filename": [
+            "room.png",    # valid
+            "photo.jpg",   # valid
+            "image.jpeg",  # valid
+            "file.gif",    # valid
+            "doc.pdf",     # invalid extension
+            "",            # empty
+            "image.PNG",   # uppercase extension, valid if case-insensitive
+        ],
+    }
+
+    for category, tests in edge_test_cases.items():
+        print(f"-- {category.upper()} EDGE CASE TESTS --")
+        for test_input in tests:
+            if category == "room_number":
+                result = sanitize_room_number(test_input)
+                passed = bool(result)
+            elif category == "room_type":
+                result = sanitize_room_type(test_input)
+                passed = bool(result)
+            elif category == "program_name":
+                result = sanitize_program_name(test_input)
+                passed = bool(result)
+            elif category == "image_filename":
+                result = validate_image_filename(test_input)
+                passed = bool(result)
+            print(f"Input: '{test_input}' -> {'PASS' if passed else 'FAIL'}")
+
+
+def run_interactive_tests():
+    """Interactive manual input tests for rooms_routes.py"""
+    print("\n=== Interactive Manual Tests ===")
+    rn_input = input("Enter room number: ")
+    print(f"Result: {sanitize_room_number(rn_input)}")
+
+    rt_input = input("Enter room type: ")
+    print(f"Result: {sanitize_room_type(rt_input)}")
+
+    prog_input = input("Enter program name: ")
+    print(f"Result: {sanitize_program_name(prog_input)}")
+
+    img_input = input("Enter image filename: ")
+    print(f"Result: {validate_image_filename(img_input)}")
+
+
 if __name__ == "__main__":
-    print("Interactive and automatic quick tests for rooms_routes.py\n")
-
-    # Room number tests
-    for rn in ["A101", "LAB-2", "203", "Room#1", ""]:
-        result = sanitize_room_number(rn)
-        print(f"Room number test: '{rn}' -> {result} -> {'PASS' if result else 'FAIL'}")
-
-    # Room type tests
-    for rt in ["Lecture", "Computer Lab", "Lab123", "", "A"]:
-        result = sanitize_room_type(rt)
-        print(f"Room type test: '{rt}' -> {result} -> {'PASS' if result else 'FAIL'}")
-
-    # Program name tests
-    for prog in ["Computer Science", "IT & AI", "Prog@123", ""]:
-        result = sanitize_program_name(prog)
-        print(f"Program test: '{prog}' -> {result} -> {'PASS' if result else 'FAIL'}")
-
-    # Image extension tests
-    for img in ["room.png", "photo.jpg", "image.jpeg", "file.gif", "doc.pdf"]:
-        result = validate_image_filename(img)
-        print(f"Image test: '{img}' -> {result} -> {'PASS' if result else 'FAIL'}")
-
-    # Interactive tests
-    print("\nInteractive input tests:")
-    rn_input = input("Enter room number: "); print(sanitize_room_number(rn_input))
-    rt_input = input("Enter room type: "); print(sanitize_room_type(rt_input))
-    prog_input = input("Enter program name: "); print(sanitize_program_name(prog_input))
-    img_input = input("Enter image filename: "); print(validate_image_filename(img_input))
-    print("\nAll interactive tests completed!")
+    print("=== Running Rooms Routes Validation Tests ===\n")
+    run_edge_case_tests()
+    run_interactive_tests()
+    print("\n=== All rooms routes tests completed ===")

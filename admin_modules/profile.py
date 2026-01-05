@@ -202,10 +202,84 @@ if __name__ == "__main__":
         result = validate_load_units(units)
         print(f"Load units test: '{units}' -> {result} -> {'PASS' if result is not None else 'FAIL'}")
 
-    # ----------------------------
-    # INTERACTIVE TESTS
-    # ----------------------------
-    print("\nNow you can try interactive input tests:")
+    # ==================================================
+# VALIDATION TESTS – FULL MATCH & EDGE CASES
+# ==================================================
+
+def run_edge_case_tests():
+    """
+    Run automatic full-match and edge-case validation tests
+    for names, usernames, passwords, and load units.
+    """
+    print("=== Automatic Full-Match & Edge-Case Validation Tests ===")
+
+    edge_test_cases = {
+        "name": [
+            "John Doe",
+            " Anne-Marie O'Neill ",
+            "",
+            "A" * 101,
+            "Élodie Dupont",
+            "John123",
+        ],
+        "username": [
+            "john_doe",
+            "_user",
+            "user_",
+            "user!name",
+            "a" * 50,
+            "a" * 51,
+            "ab",
+            "a",
+        ],
+        "password": [
+            "Abc123!@",
+            "weakpass",
+            "NoNumber!",
+            "NOLOWER1!",
+            "noupper1!",
+            "Short1!",
+            "Abc!@#",
+            "A1!" * 10,
+            "Pass word1!",
+        ],
+        "load_units": [
+            "0",
+            "1",
+            "50",
+            "100",
+            "101",
+            "-1",
+            "abc",
+            "10.5",
+            " ",
+        ],
+    }
+
+    for category, tests in edge_test_cases.items():
+        print(f"\n-- {category.upper()} EDGE CASE TESTS --")
+        for test_input in tests:
+            if category == "name":
+                result = sanitize_input(test_input, "name")
+                passed = bool(result)
+            elif category == "username":
+                result = sanitize_input(test_input, "username")
+                passed = bool(result)
+            elif category == "password":
+                valid, _ = validate_password_strength(test_input)
+                passed = valid
+            elif category == "load_units":
+                result = validate_load_units(test_input)
+                passed = result is not None
+            print(f"Input: '{test_input}' -> {'PASS' if passed else 'FAIL'}")
+
+
+def run_interactive_tests():
+    """
+    Run interactive manual input tests for the user
+    to verify edge-case handling.
+    """
+    print("\n=== Interactive Manual Validation Tests ===")
 
     name_input = input("Enter a name to test sanitize_input: ")
     result = sanitize_input(name_input, "name")
@@ -223,4 +297,9 @@ if __name__ == "__main__":
     result = validate_load_units(load_input)
     print(f"Result: {result} -> {'PASS' if result is not None else 'FAIL'}")
 
-    print("\nAll interactive tests completed!")
+
+if __name__ == "__main__":
+    print("=== Running Full-Match and Edge-Case Validation Tests ===\n")
+    run_edge_case_tests()
+    run_interactive_tests()
+    print("\n=== All validation tests completed ===")

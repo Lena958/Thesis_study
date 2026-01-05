@@ -244,35 +244,96 @@ def sanitize_instructor_name(value):
     return value if re.fullmatch(r"[A-Za-z\s\-']{2,100}", value) else None
 
 # ============================================================
-# TEST CASES (MATCHING YOUR FORMAT)
+# SUBJECTS ROUTES – FULL MATCH & EDGE CASE TESTS
 # ============================================================
 
+def run_subjects_edge_tests():
+    """Automatic full-match and edge-case tests for subjects_routes.py"""
+    print("=== Automatic Full-Match & Edge-Case Tests ===\n")
+
+    edge_test_cases = {
+        "subject_code": [
+            "CS101",      # valid
+            "IT-202",     # valid
+            "MATH#300",   # invalid character
+            "",           # empty
+            "   ",        # whitespace only
+            "A"*51        # excessive length
+        ],
+        "subject_name": [
+            "Data Structures",     # valid
+            "AI & ML",             # valid
+            "@@@",                 # invalid characters
+            "",                    # empty
+            "A"*101                # excessive length
+        ],
+        "units": [
+            "1",    # valid
+            "3",    # valid
+            "0",    # invalid
+            "11",   # invalid (too high)
+            "-1",   # invalid negative
+            "abc",  # invalid non-numeric
+        ],
+        "year_level": [
+            "1", "2", "3", "4", "5",    # valid
+            "0", "6", "7", "-1", "abc"  # invalid
+        ],
+        "section": [
+            "A", "B", "C1", "SEC-2",    # valid
+            "", "   ", "SEC#", "@@@", "A"*21  # invalid / edge
+        ],
+        "instructor_name": [
+            "John Doe", "Anne-Marie O'Neill", "Élodie Dupont",  # valid
+            "Dr123", "@@@", "", "   ", "A"*101                 # invalid / edge
+        ],
+    }
+
+    for category, tests in edge_test_cases.items():
+        print(f"-- {category.upper()} EDGE CASE TESTS --")
+        for test_input in tests:
+            if category == "subject_code":
+                result = sanitize_subject_code(test_input)
+            elif category == "subject_name":
+                result = sanitize_subject_name(test_input)
+            elif category == "units":
+                result = validate_units(test_input)
+            elif category == "year_level":
+                result = sanitize_year_level(test_input)
+            elif category == "section":
+                result = sanitize_section(test_input)
+            elif category == "instructor_name":
+                result = sanitize_instructor_name(test_input)
+            else:
+                result = None
+            passed = bool(result)
+            print(f"Input: '{test_input}' -> {'PASS' if passed else 'FAIL'}")
+
+
+def run_subjects_interactive_tests():
+    """Interactive manual input tests for subjects_routes.py"""
+    print("\n=== Interactive Manual Tests ===")
+    code_input = input("Enter subject code: ")
+    print(f"Result: {sanitize_subject_code(code_input)}")
+
+    name_input = input("Enter subject name: ")
+    print(f"Result: {sanitize_subject_name(name_input)}")
+
+    units_input = input("Enter units: ")
+    print(f"Result: {validate_units(units_input)}")
+
+    year_input = input("Enter year level: ")
+    print(f"Result: {sanitize_year_level(year_input)}")
+
+    section_input = input("Enter section: ")
+    print(f"Result: {sanitize_section(section_input)}")
+
+    instr_input = input("Enter instructor name: ")
+    print(f"Result: {sanitize_instructor_name(instr_input)}")
+
+
 if __name__ == "__main__":
-    print("Interactive and automatic quick tests for subjects_routes.py\n")
-
-    test_codes = ["CS101", "IT-202", "bad@", ""]
-    for code in test_codes:
-        print(f"Code test: '{code}' -> {sanitize_subject_code(code)}")
-
-    test_names = ["Data Structures", "AI & ML", "@@@", ""]
-    for name in test_names:
-        print(f"Name test: '{name}' -> {sanitize_subject_name(name)}")
-
-    test_units = ["3", "0", "11", "abc"]
-    for unit in test_units:
-        print(f"Units test: '{unit}' -> {validate_units(unit)}")
-
-    test_years = ["1", "5", "0", "6"]
-    for year in test_years:
-        print(f"Year test: '{year}' -> {sanitize_year_level(year)}")
-
-    test_sections = ["A", "B1", "SEC#", ""]
-    for sec in test_sections:
-        print(f"Section test: '{sec}' -> {sanitize_section(sec)}")
-
-    test_instr = ["John Doe", "Anne-Marie O'Neill", "Dr123", ""]
-    for i in test_instr:
-        print(f"Instructor test: '{i}' -> {sanitize_instructor_name(i)}")
-
-    print("\nAll tests completed!")
-
+    print("=== Running Subjects Routes Validation Tests ===\n")
+    run_subjects_edge_tests()
+    run_subjects_interactive_tests()
+    print("\n=== All subjects routes tests completed ===")

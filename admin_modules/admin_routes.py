@@ -309,59 +309,104 @@ def collect_form_data(username: str) -> Tuple[Dict[str, Any], Optional[str]]:
     return update_data, None
 
 # ==========================================================
-# LOCAL TESTING & MANUAL VERIFICATION
+# LOCAL TESTING & MANUAL VERIFICATION (SONARQUBE COMPLIANT)
 # ==========================================================
 
 if __name__ == "__main__":
-    print("Interactive and automatic quick tests for admin_routes.py\n")
+    print("=== Automatic Validation Tests ===")
 
-    test_names = ["John Doe", "Anne-Marie O'Neill", "Invalid123", ""]
-    for name in test_names:
+    MAX_NAME_LENGTH = 100
+    MAX_USERNAME_LENGTH = 50
+    MIN_USERNAME_LENGTH = 2
+
+    # ------------------------------------------------------
+    # NAME FULL-MATCH TESTS
+    # ------------------------------------------------------
+    print("\nRunning full-match name tests...")
+    name_tests = {
+        "John Doe": True,
+        "Anne-Marie O'Neill": True,
+        "Élodie Dupont": True,
+        "John123": False,
+        "John@Doe": False,
+        "": False,
+        "   ": False,
+        "A" * (MAX_NAME_LENGTH + 1): False,
+    }
+
+    for name, expected in name_tests.items():
         result = sanitize_input(name, "name")
-        print(f"Name test: '{name}' -> {result} -> {'PASS' if result else 'FAIL'}")
+        passed = bool(result) == expected
+        print(f"Name '{name}': {'PASS' if passed else 'FAIL'}")
 
-    test_usernames = [
-        "john_doe", "user123", "Invalid User!", "a",
-        "this_is_a_very_long_username_exceeding_fifty_chars_123"
-    ]
-    for username in test_usernames:
+    # ------------------------------------------------------
+    # USERNAME FULL-MATCH & EDGE CASE TESTS
+    # ------------------------------------------------------
+    print("\nRunning full-match username tests...")
+    username_tests = {
+        "john_doe": True,
+        "user123": True,
+        "a": False,
+        "ab": True,
+        "valid_user_99": True,
+        "Invalid User": False,
+        "user!name": False,
+        "user-name": False,
+        "123456": True,
+        "a" * MAX_USERNAME_LENGTH: True,
+        "a" * (MAX_USERNAME_LENGTH + 1): False,
+        "_username": False,
+        "username_": False,
+    }
+
+    for username, expected in username_tests.items():
         result = sanitize_input(username, "username")
-        print(f"Username test: '{username}' -> {result} -> {'PASS' if result else 'FAIL'}")
+        passed = bool(result) == expected
+        print(f"Username '{username}': {'PASS' if passed else 'FAIL'}")
 
-    test_departments = ["IT", "Computer Science & AI", "Dept@123", ""]
-    for dept in test_departments:
-        result = sanitize_input(dept, "department")
-        print(f"Department test: '{dept}' -> {result} -> {'PASS' if result else 'FAIL'}")
+    # ------------------------------------------------------
+    # PASSWORD FULL-MATCH & SECURITY EDGE TESTS
+    # ------------------------------------------------------
+    print("\nRunning full-match password tests...")
+    password_tests = {
+        "Abc123!@": True,
+        "ValidPass1!": True,
+        "Aa1!Aa1!": True,
+        "weakpass": False,
+        "NoNumber!": False,
+        "NOLOWER1!": False,
+        "noupper1!": False,
+        "Short1!": False,
+        "Abcdefgh1": False,
+        "Abc!@#": False,
+        "A1!" * 10: False,
+        "Pass word1!": False,
+    }
 
-    test_passwords = [
-        "Abc123!@", "weakpass", "NoNumber!", "noupper1!",
-        "NOLOWER1!", "Short1!", "ValidPass1!"
-    ]
-    for pw in test_passwords:
-        valid, message = validate_password_strength(pw)
-        print(f"Password test: '{pw}' -> Valid: {valid}, Message: {message} -> {'PASS' if valid else 'FAIL'}")
+    for password, expected in password_tests.items():
+        valid, _message = validate_password_strength(password)
+        passed = valid == expected
+        print(f"Password '{password}': {'PASS' if passed else 'FAIL'}")
 
-    test_load_units = ["50", "-5", "200", "0", "100", "abc"]
-    for units in test_load_units:
+    # ------------------------------------------------------
+    # LOAD UNITS EDGE & BOUNDARY TESTS
+    # ------------------------------------------------------
+    print("\nRunning load unit tests...")
+    load_unit_tests = {
+        "0": False,
+        "1": True,
+        "50": True,
+        "100": True,
+        "101": False,
+        "-1": False,
+        "abc": False,
+        "10.5": False,
+        " ": False,
+    }
+
+    for units, expected in load_unit_tests.items():
         result = validate_load_units(units)
-        print(f"Load units test: '{units}' -> {result} -> {'PASS' if result is not None else 'FAIL'}")
+        passed = (result is not None) == expected
+        print(f"Load '{units}': {'PASS' if passed else 'FAIL'}")
 
-    print("\nNow you can try interactive input tests:")
-
-    name_input = input("Enter a name to test sanitize_input: ")
-    result = sanitize_input(name_input, "name")
-    print(f"Result: {result} -> {'PASS' if result else 'FAIL'}")
-
-    username_input = input("Enter a username to test sanitize_input: ")
-    result = sanitize_input(username_input, "username")
-    print(f"Result: {result} -> {'PASS' if result else 'FAIL'}")
-
-    password_input = input("Enter a password to test validate_password_strength: ")
-    valid, message = validate_password_strength(password_input)
-    print(f"Valid: {valid}, Message: {message} -> {'PASS' if valid else 'FAIL'}")
-
-    load_input = input("Enter max load units to test validate_load_units: ")
-    result = validate_load_units(load_input)
-    print(f"Result: {result} -> {'PASS' if result is not None else 'FAIL'}")
-
-    print("\nAll interactive tests completed!")
+    print("\n=== All automatic validation tests completed ===")
